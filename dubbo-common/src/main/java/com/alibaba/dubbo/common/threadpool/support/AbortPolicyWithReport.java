@@ -82,29 +82,32 @@ public class AbortPolicyWithReport extends ThreadPoolExecutor.AbortPolicy {
                 e.getTaskCount(), e.getCompletedTaskCount(), e.isShutdown(), e.isTerminated(), e.isTerminating(),
                 url.getProtocol(), url.getIp(), url.getPort());
         logger.warn(msg);
+        // 打印 JStack,分析线程状态。
         dumpJStack();
+        //抛出 RejectedExecutionException 异常
         throw new RejectedExecutionException(msg);
     }
 
     private void dumpJStack() {
         long now = System.currentTimeMillis();
-
+        //每 10 分钟，打印一次。
         //dump every 10 minutes
         if (now - lastPrintTime < 10 * 60 * 1000) {
             return;
         }
-
+        //获得信号量
         if (!guard.tryAcquire()) {
             return;
         }
-
+        //创建线程池，后台执行打印JStack
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
+                //获得路径
                 String dumpPath = url.getParameter(Constants.DUMP_DIRECTORY, System.getProperty("user.home"));
 
                 SimpleDateFormat sdf;
-
+                //获得系统
                 String OS = System.getProperty("os.name").toLowerCase();
 
                 // window system don't support ":" in file name
@@ -115,14 +118,18 @@ public class AbortPolicyWithReport extends ThreadPoolExecutor.AbortPolicy {
                 }
 
                 String dateStr = sdf.format(new Date());
+                //获得输出流
                 FileOutputStream jstackStream = null;
                 try {
                     jstackStream = new FileOutputStream(new File(dumpPath, "Dubbo_JStack.log" + "." + dateStr));
+                    //打印JStack
                     JVMUtil.jstack(jstackStream);
                 } catch (Throwable t) {
                     logger.error("dump jstack error", t);
                 } finally {
+                    //释放信号量
                     guard.release();
+                    //释放输出流
                     if (jstackStream != null) {
                         try {
                             jstackStream.flush();
@@ -131,7 +138,7 @@ public class AbortPolicyWithReport extends ThreadPoolExecutor.AbortPolicy {
                         }
                     }
                 }
-
+                //记录最后打印时间
                 lastPrintTime = System.currentTimeMillis();
             }
         });
