@@ -620,13 +620,20 @@ public class ExtensionLoader<T> {
         return clazz;
     }
 
+    /**
+     * 获得拓展实现类数组
+     * @return 拓展实现类数组
+     */
     private Map<String, Class<?>> getExtensionClasses() {
+        //从缓存中,获得拓展实现类数组
         Map<String, Class<?>> classes = cachedClasses.get();
         if (classes == null) {
             synchronized (cachedClasses) {
                 classes = cachedClasses.get();
                 if (classes == null) {
+                    //从配置文件中,加载拓展实现类数组
                     classes = loadExtensionClasses();
+                    //设置到缓存中
                     cachedClasses.set(classes);
                 }
             }
@@ -634,8 +641,15 @@ public class ExtensionLoader<T> {
         return classes;
     }
 
-    // synchronized in getExtensionClasses
+    /**
+     * 加载拓展实现类数组
+     * 无需声明synchronized,因为唯一调用该方法的{@link #getExtensionClasses()}已经声明
+     * // synchronized in getExtensionClasses
+     * @return 拓展实现类数组
+     */
+
     private Map<String, Class<?>> loadExtensionClasses() {
+        //通过@SPI注解,获得默认的拓展实现类名
         final SPI defaultAnnotation = type.getAnnotation(SPI.class);
         if (defaultAnnotation != null) {
             String value = defaultAnnotation.value();
@@ -648,7 +662,7 @@ public class ExtensionLoader<T> {
                 if (names.length == 1) cachedDefaultName = names[0];
             }
         }
-
+        //从配置文件中,加载拓展实现类数组
         Map<String, Class<?>> extensionClasses = new HashMap<String, Class<?>>();
         loadDirectory(extensionClasses, DUBBO_INTERNAL_DIRECTORY);
         loadDirectory(extensionClasses, DUBBO_DIRECTORY);
