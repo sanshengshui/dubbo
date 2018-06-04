@@ -37,9 +37,13 @@ public class LimitedThreadPool implements ThreadPool {
 
     @Override
     public Executor getExecutor(URL url) {
+        //线程池名
         String name = url.getParameter(Constants.THREAD_NAME_KEY, Constants.DEFAULT_THREAD_NAME);
+        //核心线程数
         int cores = url.getParameter(Constants.CORE_THREADS_KEY, Constants.DEFAULT_CORE_THREADS);
+        //最大线程数
         int threads = url.getParameter(Constants.THREADS_KEY, Constants.DEFAULT_THREADS);
+        //队列数
         int queues = url.getParameter(Constants.QUEUES_KEY, Constants.DEFAULT_QUEUES);
         /**
          * 和CachedThreadPool实现是基本一致的，差异点在alive == Integer.MAX_VALUE,空闲时间无限大，即不会删除。
