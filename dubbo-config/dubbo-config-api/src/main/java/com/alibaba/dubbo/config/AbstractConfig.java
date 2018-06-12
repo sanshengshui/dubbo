@@ -183,10 +183,12 @@ public abstract class AbstractConfig implements Serializable {
                         && Modifier.isPublic(method.getModifiers())
                         && method.getParameterTypes().length == 0
                         && isPrimitive(method.getReturnType())) {
+                    //方法为获取基本类型,public的getting方法。
                     Parameter parameter = method.getAnnotation(Parameter.class);
                     if (method.getReturnType() == Object.class || parameter != null && parameter.excluded()) {
                         continue;
                     }
+                    //获得属性名
                     int i = name.startsWith("get") ? 3 : 2;
                     String prop = StringUtils.camelToSplitName(name.substring(i, i + 1).toLowerCase() + name.substring(i + 1), ".");
                     String key;
@@ -195,18 +197,23 @@ public abstract class AbstractConfig implements Serializable {
                     } else {
                         key = prop;
                     }
+                    //获得属性值
                     Object value = method.invoke(config);
                     String str = String.valueOf(value).trim();
                     if (value != null && str.length() > 0) {
+                        //转义
                         if (parameter != null && parameter.escaped()) {
                             str = URL.encode(str);
                         }
+                        //拼接，详细说明参见'Parameter#append()'方法的说明
                         if (parameter != null && parameter.append()) {
                             String pre = parameters.get(Constants.DEFAULT_KEY + "." + key);
+                            //default.里获取，适用于ServiceConfig => ProviderConfig,ReferenceConfig=>ConsumerConfig
                             if (pre != null && pre.length() > 0) {
                                 str = pre + "," + str;
                             }
                             pre = parameters.get(key);
+                            //通过'parameters'属性配置，例如'AbstractMethodConfig.parameters'。
                             if (pre != null && pre.length() > 0) {
                                 str = pre + "," + str;
                             }
