@@ -50,10 +50,22 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
 
     private static final long serialVersionUID = -1559314110797223229L;
 
-    // local impl class name for the service interface
+    /**
+     * local impl class name for the service interface
+     * 服务接口客户端本地代理类名，用于在客户端执行本地逻辑，如本地缓存等。
+     * 该本地代理类的构造函数必须允许传入远程代理对象，构造函数如:public XxxServiceLocal(XxxService xxxService)
+     * 设为true,表示使用缺省代理类名，即:接口名 + Local后缀
+     */
     protected String local;
 
-    // local stub class name for the service interface
+    /**
+     * local stub class name for the service interface
+     * 服务接口客户端本地代理类名，用于在客户端执行本地逻辑，如本地缓存等。
+     * 该本地代理类的构造函数必须允许传入远程代理对象，构造函数如：public XxxServiceStub(XxxService xxxService)
+     * 设为 true，表示使用缺省代理类名，即：接口名 + Stub 后缀
+     * 参见文档 <a href="本地存根">http://dubbo.io/books/dubbo-user-book/demos/local-stub.html</>
+     */
+
     protected String stub;
 
     // service monitor
@@ -102,7 +114,12 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     // the scope for referring/exporting a service, if it's local, it means searching in current JVM only.
     private String scope;
 
+    /**
+     * 校验RegistryConfig配置数组
+     * 实际上，该方法会初始化RegistryConfig的配置属性。
+     */
     protected void checkRegistry() {
+        //当RegistryConfig对象数组为空时，若'dubbo.registry.address'配置，进行创建。
         // for backward compatibility
         if (registries == null || registries.isEmpty()) {
             String address = ConfigUtils.getProperty("dubbo.registry.address");
@@ -125,6 +142,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                     + Version.getVersion()
                     + ", Please add <dubbo:registry address=\"...\" /> to your spring config. If you want unregister, please set <dubbo:service registry=\"N/A\" />");
         }
+        //读取环境变量和properties配置到RegistryConfig对象数组
         for (RegistryConfig registryConfig : registries) {
             appendProperties(registryConfig);
         }
@@ -201,11 +219,16 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                     }
                     //解析地址，创建Dubbo URL数组。(数组大小可以为一)
                     List<URL> urls = UrlUtils.parseURLs(address, map);
+                    //循环'url',设置“registry”和“protocol”属性
                     for (URL url : urls) {
+                        //设置'registry=${protocol}'和'protocol=registry'到URL
                         url = url.addParameter(Constants.REGISTRY_KEY, url.getProtocol());
                         url = url.setProtocol(Constants.REGISTRY_PROTOCOL);
+                        //添加到结果
                         if ((provider && url.getParameter(Constants.REGISTER_KEY, true))
+                                //服务提供者&&注册
                                 || (!provider && url.getParameter(Constants.SUBSCRIBE_KEY, true))) {
+                            //服务消费者&&订阅
                             registryList.add(url);
                         }
                     }
