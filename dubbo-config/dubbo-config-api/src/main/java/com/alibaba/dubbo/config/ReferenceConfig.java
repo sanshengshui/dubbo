@@ -338,13 +338,18 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
     private T createProxy(Map<String, String> map) {
         URL tmpUrl = new URL("temp", "localhost", 0, map);
+        //是否本地引用
         final boolean isJvmRefer;
+        //injvm属性为空，不通过该属性判断
         if (isInjvm() == null) {
+            // 直连服务提供者，参见文档《直连提供者》https://dubbo.gitbooks.io/dubbo-user-book/demos/explicit-target.html
             if (url != null && url.length() > 0) { // if a url is specified, don't do local reference
                 isJvmRefer = false;
+                //通过'tmpUrl'判断，是否需要本地引用
             } else if (InjvmProtocol.getInjvmProtocol().isInjvmRefer(tmpUrl)) {
                 // by default, reference local service if there is
                 isJvmRefer = true;
+                //默认不是
             } else {
                 isJvmRefer = false;
             }
@@ -352,12 +357,16 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             isJvmRefer = isInjvm().booleanValue();
         }
 
+        //本地引用
         if (isJvmRefer) {
+            //创建服务引用URL对象
             URL url = new URL(Constants.LOCAL_PROTOCOL, NetUtils.LOCALHOST, 0, interfaceClass.getName()).addParameters(map);
+            //引用服务，返回Invoker对象
             invoker = refprotocol.refer(interfaceClass, url);
             if (logger.isInfoEnabled()) {
                 logger.info("Using injvm service " + interfaceClass.getName());
             }
+            //正常流程，一般为远程引用
         } else {
             if (url != null && url.length() > 0) { // user specified URL, could be peer-to-peer address, or register center's address.
                 String[] us = Constants.SEMICOLON_SPLIT_PATTERN.split(url);
@@ -411,6 +420,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             }
         }
 
+        //启动时检查
         Boolean c = check;
         if (c == null && consumer != null) {
             c = consumer.isCheck();
