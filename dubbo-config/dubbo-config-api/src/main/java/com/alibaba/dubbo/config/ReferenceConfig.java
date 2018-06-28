@@ -368,21 +368,28 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
             }
             //正常流程，一般为远程引用
         } else {
+            //定义直连地址，可以是服务提供者的地址，也可以是注册中心的地址
             if (url != null && url.length() > 0) { // user specified URL, could be peer-to-peer address, or register center's address.
+                //拆分地址为数组，使用";"分隔。
                 String[] us = Constants.SEMICOLON_SPLIT_PATTERN.split(url);
                 if (us != null && us.length > 0) {
                     for (String u : us) {
+                        //创建URL对象
                         URL url = URL.valueOf(u);
+                        //设置默认路径
                         if (url.getPath() == null || url.getPath().length() == 0) {
                             url = url.setPath(interfaceName);
                         }
+                        //注册中心的地址，带上服务引用的配置参数
                         if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
                             urls.add(url.addParameterAndEncoded(Constants.REFER_KEY, StringUtils.toQueryString(map)));
+                            //服务提供者的地址
                         } else {
                             urls.add(ClusterUtils.mergeUrl(url, map));
                         }
                     }
                 }
+                //注册中心
             } else { // assemble URL from register center's configuration
                 List<URL> us = loadRegistries(false);
                 if (us != null && !us.isEmpty()) {
