@@ -413,20 +413,27 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
 
             //单‘urls’时，引用服务，返回Invoker对象
             if (urls.size() == 1) {
+                //引用服务
                 invoker = refprotocol.refer(interfaceClass, urls.get(0));
             } else {
+                //循环'urls',引用服务，返回Invoker对象
                 List<Invoker<?>> invokers = new ArrayList<Invoker<?>>();
                 URL registryURL = null;
                 for (URL url : urls) {
+                    //引用服务
                     invokers.add(refprotocol.refer(interfaceClass, url));
+                    //使用最后一个注册中心的URL
                     if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
                         registryURL = url; // use last registry url
                     }
                 }
+                //有注册中心
                 if (registryURL != null) { // registry url is available
+                    //对有注册中心的Cluster只有AvailableCluster
                     // use AvailableCluster only when register's cluster is available
                     URL u = registryURL.addParameter(Constants.CLUSTER_KEY, AvailableCluster.NAME);
                     invoker = cluster.join(new StaticDirectory(u, invokers));
+                    //无注册中心
                 } else { // not a registry url
                     invoker = cluster.join(new StaticDirectory(invokers));
                 }
