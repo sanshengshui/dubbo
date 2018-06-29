@@ -391,13 +391,18 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 }
                 //注册中心
             } else { // assemble URL from register center's configuration
+                //加载注册中心URL数组
                 List<URL> us = loadRegistries(false);
+                //循环数组,添加到'url'中。
                 if (us != null && !us.isEmpty()) {
                     for (URL u : us) {
+                        //加载监控中心URL
                         URL monitorUrl = loadMonitor(u);
+                        //服务引用配置对象'map',带上监控中心的URL
                         if (monitorUrl != null) {
                             map.put(Constants.MONITOR_KEY, URL.encode(monitorUrl.toFullString()));
                         }
+                        //注册中心的地址，带上服务引用的配置参数
                         urls.add(u.addParameterAndEncoded(Constants.REFER_KEY, StringUtils.toQueryString(map)));
                     }
                 }
@@ -406,6 +411,7 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
                 }
             }
 
+            //单‘urls’时，引用服务，返回Invoker对象
             if (urls.size() == 1) {
                 invoker = refprotocol.refer(interfaceClass, urls.get(0));
             } else {
