@@ -193,6 +193,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     }
 
     public synchronized void export() {
+        //当export或者delay未配置，从ProviderConfig对象读取。
         if (provider != null) {
             if (export == null) {
                 export = provider.getExport();
@@ -201,10 +202,12 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                 delay = provider.getDelay();
             }
         }
+        //不暴露服务(export = false),则不进行暴露服务逻辑
         if (export != null && !export) {
             return;
         }
 
+        //延迟暴露
         if (delay != null && delay > 0) {
             delayExportExecutor.schedule(new Runnable() {
                 @Override
@@ -212,12 +215,14 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                     doExport();
                 }
             }, delay, TimeUnit.MILLISECONDS);
+            //立即暴露
         } else {
             doExport();
         }
     }
 
     protected synchronized void doExport() {
+        //检查是否可以暴露，若可以，标记可以暴露
         if (unexported) {
             throw new IllegalStateException("Already unexported!");
         }
@@ -225,9 +230,11 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             return;
         }
         exported = true;
+        //检验接口名为空
         if (interfaceName == null || interfaceName.length() == 0) {
             throw new IllegalStateException("<dubbo:service interface=\"\" /> interface not allow null!");
         }
+        //拼接属性配置（环境变量 + properties属性）到ProviderConfig对象
         checkDefault();
         if (provider != null) {
             if (application == null) {
