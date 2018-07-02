@@ -148,9 +148,14 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         }
     }
 
+    /**
+     * 校验ApplicationConfig配置
+     * 实际上,该方法会初始化ApplicationConfig的配置属性。
+     */
     @SuppressWarnings("deprecation")
     protected void checkApplication() {
-        // for backward compatibility
+        //当ApplicationConfig对象为空时，若有'dubbo.application.name'配置，进行创建。
+        // for backward compatibility 向后兼容
         if (application == null) {
             String applicationName = ConfigUtils.getProperty("dubbo.application.name");
             if (applicationName != null && applicationName.length() > 0) {
@@ -161,8 +166,9 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             throw new IllegalStateException(
                     "No such application config! Please add <dubbo:application name=\"...\" /> to your spring config.");
         }
+        //读取环境变量和properties配置到ApplicationConfig对象。
         appendProperties(application);
-
+        //初始化优雅停机的超时时长，参见文档
         String wait = ConfigUtils.getProperty(Constants.SHUTDOWN_WAIT_KEY);
         if (wait != null && wait.trim().length() > 0) {
             System.setProperty(Constants.SHUTDOWN_WAIT_KEY, wait.trim());

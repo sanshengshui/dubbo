@@ -77,11 +77,32 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     private static final Map<String, Integer> RANDOM_PORT_MAP = new HashMap<String, Integer>();
 
+    /**
+     * 延迟暴露执行器
+     */
     private static final ScheduledExecutorService delayExportExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("DubboServiceDelayExporter", true));
+    /**
+     * 服务配置对应的Dubbo URL数组
+     * 非配置。
+     */
     private final List<URL> urls = new ArrayList<URL>();
+    /**
+     * 服务配置暴露的 Exporter 。
+     * URL ：Exporter 不一定是 1：1 的关系。
+     * 例如 {@link #scope} 未设置时，会暴露 Local + Remote 两个，也就是 URL ：Exporter = 1：2
+     *      {@link #scope} 设置为空时，不会暴露，也就是 URL ：Exporter = 1：0
+     *      {@link #scope} 设置为 Local 或 Remote 任一时，会暴露 Local 或 Remote 一个，也就是 URL ：Exporter = 1：1
+     *
+     * 非配置。
+     */
     private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
     // interface type
     private String interfaceName;
+    /**
+     * {@link #interfaceName} 对应的接口类
+     *
+     * 非配置
+     */
     private Class<?> interfaceClass;
     // reference to interface impl
     private T ref;
@@ -742,12 +763,17 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         return port;
     }
 
+    /**
+     * 校验ProviderConfig配置
+     * 实际上,会拼接属性配置(环境变量 + properties属性)到ProviderConfig对象。
+     */
     private void checkDefault() {
         if (provider == null) {
             provider = new ProviderConfig();
         }
         appendProperties(provider);
     }
+
 
     private void checkProtocol() {
         if ((protocols == null || protocols.isEmpty())
