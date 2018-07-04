@@ -63,6 +63,10 @@ public class DubboProtocol extends AbstractProtocol {
     private static final String IS_CALLBACK_SERVICE_INVOKE = "_isCallBackServiceInvoke";
     private static DubboProtocol INSTANCE;
     private final Map<String, ExchangeServer> serverMap = new ConcurrentHashMap<String, ExchangeServer>(); // <host:port,Exchanger>
+    /**
+     * 通信客户端集合
+     * key: 服务器地址。格式为:host:port
+     */
     private final Map<String, ReferenceCountExchangeClient> referenceClientMap = new ConcurrentHashMap<String, ReferenceCountExchangeClient>(); // <host:port,Exchanger>
     private final ConcurrentMap<String, LazyConnectExchangeClient> ghostClientMap = new ConcurrentHashMap<String, LazyConnectExchangeClient>();
     private final Set<String> optimizers = new ConcurrentHashSet<String>();
@@ -371,20 +375,28 @@ public class DubboProtocol extends AbstractProtocol {
      * Get shared connection
      */
     private ExchangeClient getSharedClient(URL url) {
+        //从集合中，查找ReferenceCountExchangeClient对象
         String key = url.getAddress();
         ReferenceCountExchangeClient client = referenceClientMap.get(key);
         if (client != null) {
+            //若未关闭，增加指向该Client的数量，并返回它
             if (!client.isClosed()) {
                 client.incrementAndGetCount();
                 return client;
             } else {
+                //若已关闭，移除
                 referenceClientMap.remove(key);
             }
         }
+        //同步，创建ExchangeClient对象。
         synchronized (key.intern()) {
+            //创建ExchangeClient对象
             ExchangeClient exchangeClient = initClient(url);
+            //将'exchangeClient'包装，创建ReferenceCountExchangeClient对象
             client = new ReferenceCountExchangeClient(exchangeClient, ghostClientMap);
+            //添加到集合
             referenceClientMap.put(key, client);
+            //添加到'ghostClientMap'
             ghostClientMap.remove(key);
             return client;
         }
