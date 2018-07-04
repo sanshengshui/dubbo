@@ -406,12 +406,14 @@ public class DubboProtocol extends AbstractProtocol {
      * Create new connection
      */
     private ExchangeClient initClient(URL url) {
-
+        //校验Client的Dubbo SPI拓展是否存在
         // client type setting.
         String str = url.getParameter(Constants.CLIENT_KEY, url.getParameter(Constants.SERVER_KEY, Constants.DEFAULT_REMOTING_CLIENT));
 
+        //设置编解码器为Dubbo,即DubboCountCodec
         url = url.addParameter(Constants.CODEC_KEY, DubboCodec.NAME);
         // enable heartbeat by default
+        //默认开启heartbeat
         url = url.addParameterIfAbsent(Constants.HEARTBEAT_KEY, String.valueOf(Constants.DEFAULT_HEARTBEAT));
 
         // BIO is not allowed since it has severe performance issue.
@@ -419,12 +421,14 @@ public class DubboProtocol extends AbstractProtocol {
             throw new RpcException("Unsupported client type: " + str + "," +
                     " supported client type is " + StringUtils.join(ExtensionLoader.getExtensionLoader(Transporter.class).getSupportedExtensions(), " "));
         }
-
+        //连接服务器，创建客户端
         ExchangeClient client;
         try {
+            //懒连接,创建LazyConnentExchangeClient对象
             // connection should be lazy
             if (url.getParameter(Constants.LAZY_CONNECT_KEY, false)) {
                 client = new LazyConnectExchangeClient(url, requestHandler);
+                //直接连接，创建HeaderExchangeClient对象
             } else {
                 client = Exchangers.connect(url, requestHandler);
             }
