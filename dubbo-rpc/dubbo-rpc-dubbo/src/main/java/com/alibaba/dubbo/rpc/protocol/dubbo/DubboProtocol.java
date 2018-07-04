@@ -338,21 +338,29 @@ public class DubboProtocol extends AbstractProtocol {
         return invoker;
     }
 
+    /**
+     * 获得连接服务提供者的远程通信客户端数组
+     * @param url 服务提供者URL
+     * @return 远程通信客户端
+     */
     private ExchangeClient[] getClients(URL url) {
+        //是否共享连接
         // whether to share connection
         boolean service_share_connect = false;
         int connections = url.getParameter(Constants.CONNECTIONS_KEY, 0);
         // if not configured, connection is shared, otherwise, one connection for one service
-        if (connections == 0) {
+        if (connections == 0) {// 未配置时,默认共享
             service_share_connect = true;
             connections = 1;
         }
-
+        //创建连接服务提供者的ExchangeClient对象数组
         ExchangeClient[] clients = new ExchangeClient[connections];
         for (int i = 0; i < clients.length; i++) {
-            if (service_share_connect) {
+            if (service_share_connect) {//共享
+                //调用#getSharedClient(url)方法,获得ExchangeClient对象。
                 clients[i] = getSharedClient(url);
-            } else {
+            } else {//不共享
+                //调用#initClient(url)方法,直接创建ExchangeClient对象
                 clients[i] = initClient(url);
             }
         }
