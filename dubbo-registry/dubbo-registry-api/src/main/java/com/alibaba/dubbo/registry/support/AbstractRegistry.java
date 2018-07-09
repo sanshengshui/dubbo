@@ -51,10 +51,13 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * AbstractRegistry. (SPI, Prototype, ThreadSafe)
- *
+ * 实现Registry接口，Registry抽象类，实现了如下方法:
+ * 通用的注册，订阅，查询，通知等方法。
+ * 持久化注册数据到文件，以 properties 格式存储。应用于，重启时，无法从注册中心加载服务提供者列表等信息时，从该文件中读取。
  */
 public abstract class AbstractRegistry implements Registry {
 
+    //URL地址分隔符，用于文件缓存中，服务提供者URL分隔
     // URL address separator, used in file cache, service provider URL separation
     private static final char URL_SEPARATOR = ' ';
     // URL address separated regular expression for parsing the service provider URL list in the file cache
