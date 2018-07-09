@@ -32,7 +32,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * AbstractRegistryFactory. (SPI, Singleton, ThreadSafe)
- *
+ * 实现RegistryFactory接口，RegistryFactory抽象类，实现了Registry的容器管理
  * @see com.alibaba.dubbo.registry.RegistryFactory
  */
 public abstract class AbstractRegistryFactory implements RegistryFactory {
@@ -56,6 +56,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
     }
 
     /**
+     * 销毁
      * Close all created registries
      */
     // TODO: 2017/8/30 to move somewhere else better
@@ -63,9 +64,11 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Close all registries " + getRegistries());
         }
+        //获得锁
         // Lock up the registry shutdown process
         LOCK.lock();
         try {
+            //销毁
             for (Registry registry : getRegistries()) {
                 try {
                     registry.destroy();
@@ -73,38 +76,57 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
                     LOGGER.error(e.getMessage(), e);
                 }
             }
+            //清空缓存
             REGISTRIES.clear();
         } finally {
+            //释放锁
             // Release the lock
             LOCK.unlock();
         }
     }
 
+    /**
+     * 获得注册中心Registry对象
+     * @param url Registry address, is not allowed to be empty
+     * @return Registry 对象
+     */
     @Override
     public Registry getRegistry(URL url) {
+        //修改URL
         url = url.setPath(RegistryService.class.getName())
                 .addParameter(Constants.INTERFACE_KEY, RegistryService.class.getName())
                 .removeParameters(Constants.EXPORT_KEY, Constants.REFER_KEY);
+        //计算key
         String key = url.toServiceString();
         // Lock the registry access process to ensure a single instance of the registry
+        //获得锁
         LOCK.lock();
         try {
+            //从缓存中获得Registry对象
             Registry registry = REGISTRIES.get(key);
             if (registry != null) {
                 return registry;
             }
+            //缓存不存在，进行创建Registry对象
             registry = createRegistry(url);
             if (registry == null) {
                 throw new IllegalStateException("Can not create registry " + url);
             }
+            //添加到缓存中
             REGISTRIES.put(key, registry);
             return registry;
         } finally {
+            //释放锁
             // Release the lock
             LOCK.unlock();
         }
     }
 
+    /**
+     * 创建Registry对象
+     * @param url 注册中心地址
+     * @return Registry 对象
+     */
     protected abstract Registry createRegistry(URL url);
 
 }
