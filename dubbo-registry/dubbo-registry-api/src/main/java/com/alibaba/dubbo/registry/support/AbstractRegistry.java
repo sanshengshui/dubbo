@@ -374,8 +374,12 @@ public abstract class AbstractRegistry implements Registry {
         }
     }
 
+    /**
+     * 恢复注册和订阅
+     * @throws Exception 发生异常
+     */
     protected void recover() throws Exception {
-        // register
+        // register 恢复注册
         Set<URL> recoverRegistered = new HashSet<URL>(getRegistered());
         if (!recoverRegistered.isEmpty()) {
             if (logger.isInfoEnabled()) {
@@ -385,7 +389,7 @@ public abstract class AbstractRegistry implements Registry {
                 register(url);
             }
         }
-        // subscribe
+        // subscribe 恢复订阅
         Map<URL, Set<NotifyListener>> recoverSubscribed = new HashMap<URL, Set<NotifyListener>>(getSubscribed());
         if (!recoverSubscribed.isEmpty()) {
             if (logger.isInfoEnabled()) {
@@ -520,17 +524,22 @@ public abstract class AbstractRegistry implements Registry {
         }
     }
 
+    /**
+     * 取消注册和订阅
+     */
     @Override
     public void destroy() {
+        //已销毁，跳过
         if (logger.isInfoEnabled()) {
             logger.info("Destroy registry:" + getUrl());
         }
+        //取消注册
         Set<URL> destroyRegistered = new HashSet<URL>(getRegistered());
         if (!destroyRegistered.isEmpty()) {
             for (URL url : new HashSet<URL>(getRegistered())) {
                 if (url.getParameter(Constants.DYNAMIC_KEY, true)) {
                     try {
-                        unregister(url);
+                        unregister(url);//取消
                         if (logger.isInfoEnabled()) {
                             logger.info("Destroy unregister url " + url);
                         }
@@ -540,6 +549,7 @@ public abstract class AbstractRegistry implements Registry {
                 }
             }
         }
+        //取消订阅
         Map<URL, Set<NotifyListener>> destroySubscribed = new HashMap<URL, Set<NotifyListener>>(getSubscribed());
         if (!destroySubscribed.isEmpty()) {
             for (Map.Entry<URL, Set<NotifyListener>> entry : destroySubscribed.entrySet()) {
