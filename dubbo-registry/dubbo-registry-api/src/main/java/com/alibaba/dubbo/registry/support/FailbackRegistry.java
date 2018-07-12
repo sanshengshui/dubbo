@@ -186,15 +186,19 @@ public abstract class FailbackRegistry extends AbstractRegistry {
 
     @Override
     public void unregister(URL url) {
+        //移除出'registered'变量
         super.unregister(url);
+        //移除出'failedRegistered' 'failedUnregistered'变量
         failedRegistered.remove(url);
         failedUnregistered.remove(url);
+        //向注册中心发送取消注册请求
         try {
             // Sending a cancellation request to the server side
             doUnregister(url);
         } catch (Exception e) {
             Throwable t = e;
 
+            //如果开启了启动时检测，则直接抛出异常
             // If the startup detection is opened, the Exception is thrown directly.
             boolean check = getUrl().getParameter(Constants.CHECK_KEY, true)
                     && url.getParameter(Constants.CHECK_KEY, true)
@@ -208,7 +212,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
             } else {
                 logger.error("Failed to uregister " + url + ", waiting for retry, cause: " + t.getMessage(), t);
             }
-
+            //将失败的取消注册请求记录到'failedUnregistered',定时重试
             // Record a failed registration request to a failed list, retry regularly
             failedUnregistered.add(url);
         }
@@ -216,19 +220,24 @@ public abstract class FailbackRegistry extends AbstractRegistry {
 
     @Override
     public void subscribe(URL url, NotifyListener listener) {
+        //移除出'subscribed'变量
         super.subscribe(url, listener);
+        //移除出'failedSubcribed' 'failedUnsubscribed' 'failedNotified'
         removeFailedSubscribed(url, listener);
+        //向注册中心发送订阅请求
         try {
             // Sending a subscription request to the server side
             doSubscribe(url, listener);
         } catch (Exception e) {
             Throwable t = e;
 
+            //如果有缓存的URL集合，进行通知。后续订阅成功后，会使用最新的URL集合，进行通知
             List<URL> urls = getCacheUrls(url);
             if (urls != null && !urls.isEmpty()) {
                 notify(url, listener, urls);
                 logger.error("Failed to subscribe " + url + ", Using cached list: " + urls + " from cache file: " + getUrl().getParameter(Constants.FILE_KEY, System.getProperty("user.home") + "/dubbo-registry-" + url.getHost() + ".cache") + ", cause: " + t.getMessage(), t);
             } else {
+                //如果开启了启动时检测，则直接抛出异常
                 // If the startup detection is opened, the Exception is thrown directly.
                 boolean check = getUrl().getParameter(Constants.CHECK_KEY, true)
                         && url.getParameter(Constants.CHECK_KEY, true);
@@ -237,6 +246,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
                     if (skipFailback) {
                         t = t.getCause();
                     }
+                    //将失败的订阅请求记录到'failedSubscribed',定时重试
                     throw new IllegalStateException("Failed to subscribe " + url + ", cause: " + t.getMessage(), t);
                 } else {
                     logger.error("Failed to subscribe " + url + ", waiting for retry, cause: " + t.getMessage(), t);
@@ -250,14 +260,17 @@ public abstract class FailbackRegistry extends AbstractRegistry {
 
     @Override
     public void unsubscribe(URL url, NotifyListener listener) {
+        //移除出'unsubscribed'变量
         super.unsubscribe(url, listener);
+        //移除出'failedSubscribed''failedUnsubscribed' 'failedNotified'
         removeFailedSubscribed(url, listener);
+        //向注册中心发送取消订阅请求
         try {
             // Sending a canceling subscription request to the server side
             doUnsubscribe(url, listener);
         } catch (Exception e) {
             Throwable t = e;
-
+            //如果开启了启动时检测，则直接抛出异常
             // If the startup detection is opened, the Exception is thrown directly.
             boolean check = getUrl().getParameter(Constants.CHECK_KEY, true)
                     && url.getParameter(Constants.CHECK_KEY, true);
@@ -271,6 +284,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
                 logger.error("Failed to unsubscribe " + url + ", waiting for retry, cause: " + t.getMessage(), t);
             }
 
+            //将失败的订阅请求记录到'failedUnsubscribed',定时重试
             // Record a failed registration request to a failed list, retry regularly
             Set<NotifyListener> listeners = failedUnsubscribed.get(url);
             if (listeners == null) {
@@ -289,9 +303,11 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         if (listener == null) {
             throw new IllegalArgumentException("notify listener == null");
         }
+        //通知监听器
         try {
             doNotify(url, listener, urls);
         } catch (Exception t) {
+            //将失败的通知器记录到'failedNotified',定时重试
             // Record a failed registration request to a failed list, retry regularly
             Map<NotifyListener, List<URL>> listeners = failedNotified.get(url);
             if (listeners == null) {
@@ -309,6 +325,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
 
     @Override
     protected void recover() throws Exception {
+        //register恢复注册，添加到'failedRegistered',定时重试
         // register
         Set<URL> recoverRegistered = new HashSet<URL>(getRegistered());
         if (!recoverRegistered.isEmpty()) {
@@ -319,6 +336,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
                 failedRegistered.add(url);
             }
         }
+        //subscribe恢复订阅，添加到'failedSubscribed',定时重试
         // subscribe
         Map<URL, Set<NotifyListener>> recoverSubscribed = new HashMap<URL, Set<NotifyListener>>(getSubscribed());
         if (!recoverSubscribed.isEmpty()) {
