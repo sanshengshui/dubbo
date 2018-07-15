@@ -44,16 +44,34 @@ public class ZookeeperRegistry extends FailbackRegistry {
 
     private final static Logger logger = LoggerFactory.getLogger(ZookeeperRegistry.class);
 
+    /**
+     * 默认端口
+     */
     private final static int DEFAULT_ZOOKEEPER_PORT = 2181;
 
+    /**
+     * 默认Zookeeper根节点
+     */
     private final static String DEFAULT_ROOT = "dubbo";
 
+    /**
+     * Zookeeper根节点
+     */
     private final String root;
 
+    /**
+     * Service接口全名集合
+     */
     private final Set<String> anyServices = new ConcurrentHashSet<String>();
 
+    /**
+     * 监听器集合
+     */
     private final ConcurrentMap<URL, ConcurrentMap<NotifyListener, ChildListener>> zkListeners = new ConcurrentHashMap<URL, ConcurrentMap<NotifyListener, ChildListener>>();
 
+    /**
+     * Zookeeper客户端
+     */
     private final ZookeeperClient zkClient;
 
     public ZookeeperRegistry(URL url, ZookeeperTransporter zookeeperTransporter) {
@@ -61,12 +79,15 @@ public class ZookeeperRegistry extends FailbackRegistry {
         if (url.isAnyHost()) {
             throw new IllegalStateException("registry address == null");
         }
-        String group = url.getParameter(Constants.GROUP_KEY, DEFAULT_ROOT);
+        //获得Zookeeper根节点
+        String group = url.getParameter(Constants.GROUP_KEY, DEFAULT_ROOT);//‘url.parameters.group’参数值
         if (!group.startsWith(Constants.PATH_SEPARATOR)) {
             group = Constants.PATH_SEPARATOR + group;
         }
         this.root = group;
+        //创建Zookeeper Client
         zkClient = zookeeperTransporter.connect(url);
+        //添加StateListener对象。该监听器，在重连时，调用恢复方法。
         zkClient.addStateListener(new StateListener() {
             @Override
             public void stateChanged(int state) {
@@ -111,6 +132,11 @@ public class ZookeeperRegistry extends FailbackRegistry {
     @Override
     protected void doRegister(URL url) {
         try {
+            //调用#toUrlPath(url)方法，获得URL的路径
+            /**
+             * url.parameters.dynamic,是否动态数据。若为false,该数据为持久数据，当注册方退出时，数据依然保存在注册中心
+             * 调用ZookeeperClient#create(url,ephemeral)方法，创建URL节点，即我们在首图看到的URL层
+             */
             zkClient.create(toUrlPath(url), url.getParameter(Constants.DYNAMIC_KEY, true));
         } catch (Throwable e) {
             throw new RpcException("Failed to register " + url + " to zookeeper " + getUrl() + ", cause: " + e.getMessage(), e);
@@ -265,10 +291,26 @@ public class ZookeeperRegistry extends FailbackRegistry {
         return paths;
     }
 
+    /**
+     * 获得分类路径
+     *
+     * Root + Service + Type
+     *
+     * @param url URL
+     * @return 分类路径
+     */
     private String toCategoryPath(URL url) {
         return toServicePath(url) + Constants.PATH_SEPARATOR + url.getParameter(Constants.CATEGORY_KEY, Constants.DEFAULT_CATEGORY);
     }
 
+    /**
+     * 获得URL的路径
+     * Root + Service + Type + URL
+     * 被{@link #doRegister(URL)} 和 {@link #doUnregister(URL)}调用
+     *
+     * @param url URL
+     * @return 路径
+     */
     private String toUrlPath(URL url) {
         return toCategoryPath(url) + Constants.PATH_SEPARATOR + URL.encode(url.toFullString());
     }
