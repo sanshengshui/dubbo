@@ -155,20 +155,24 @@ public class ZookeeperRegistry extends FailbackRegistry {
     @Override
     protected void doSubscribe(final URL url, final NotifyListener listener) {
         try {
+            //处理所有Service层的发起订阅，例如监控中心的订阅
             if (Constants.ANY_VALUE.equals(url.getServiceInterface())) {
                 String root = toRootPath();
+                //获得url对应的监听器集合
                 ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
-                if (listeners == null) {
+                if (listeners == null) {//不存在，进行创建
                     zkListeners.putIfAbsent(url, new ConcurrentHashMap<NotifyListener, ChildListener>());
                     listeners = zkListeners.get(url);
                 }
+                //获得childListener对象
                 ChildListener zkListener = listeners.get(listener);
-                if (zkListener == null) {
+                if (zkListener == null) {//不存在ChildListener对象，进行创建ChildListener对象
                     listeners.putIfAbsent(listener, new ChildListener() {
                         @Override
                         public void childChanged(String parentPath, List<String> currentChilds) {
                             for (String child : currentChilds) {
                                 child = URL.decode(child);
+                                //新增Service接口全名时(即新增服务)，发起该Service层的订阅
                                 if (!anyServices.contains(child)) {
                                     anyServices.add(child);
                                     subscribe(url.setPath(child).addParameters(Constants.INTERFACE_KEY, child,
@@ -179,8 +183,11 @@ public class ZookeeperRegistry extends FailbackRegistry {
                     });
                     zkListener = listeners.get(listener);
                 }
+                //创建Service节点。该节点为持久节点。
                 zkClient.create(root, false);
+                //向Zookeeper,Service节点，发起订阅
                 List<String> services = zkClient.addChildListener(root, zkListener);
+                //首次全量数据获取完成，循环Service接口全名数组，发起该Service层的订阅
                 if (services != null && !services.isEmpty()) {
                     for (String service : services) {
                         service = URL.decode(service);
