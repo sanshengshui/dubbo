@@ -257,6 +257,11 @@ public class ZookeeperRegistry extends FailbackRegistry {
         }
     }
 
+    /**
+     * 获得根目录
+     * Root
+     * @return 路径
+     */
     private String toRootDir() {
         if (root.equals(Constants.PATH_SEPARATOR)) {
             return root;
@@ -264,6 +269,10 @@ public class ZookeeperRegistry extends FailbackRegistry {
         return root + Constants.PATH_SEPARATOR;
     }
 
+    /**
+     * Root
+     * @return 根路径
+     */
     private String toRootPath() {
         return root;
     }
