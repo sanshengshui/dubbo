@@ -248,6 +248,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
                     zkClient.removeChildListener(root, zkListener);
                 } else {
                     for (String path : toCategoriesPath(url)) {
+                        //向Zookeeper,移除订阅
                         zkClient.removeChildListener(path, zkListener);
                     }
                 }
@@ -256,11 +257,17 @@ public class ZookeeperRegistry extends FailbackRegistry {
     }
 
     @Override
+    /**
+     * 查询符合条件的已注册数据，与订阅的推模式相对应，这里为拉模式，只返回一次结果
+     * @param url 查询条件，不允许为空，如:consumer://10.20.153.10/com.alibaba.foo.BarService?version=1.0.0&application=kylin
+     * @return 已注册信息列表，可能为空，含义同{@link )}
+     */
     public List<URL> lookup(URL url) {
         if (url == null) {
             throw new IllegalArgumentException("lookup url == null");
         }
         try {
+            //循环分类数组，获得所有的URL数组
             List<String> providers = new ArrayList<String>();
             for (String path : toCategoriesPath(url)) {
                 List<String> children = zkClient.getChildren(path);
@@ -268,6 +275,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
                     providers.addAll(children);
                 }
             }
+            //匹配
             return toUrlsWithoutEmpty(url, providers);
         } catch (Throwable e) {
             throw new RpcException("Failed to lookup " + url + " from zookeeper " + getUrl() + ", cause: " + e.getMessage(), e);
@@ -357,14 +365,21 @@ public class ZookeeperRegistry extends FailbackRegistry {
         return toCategoryPath(url) + Constants.PATH_SEPARATOR + URL.encode(url.toFullString());
     }
 
+    /**
+     * 获得providers中，和consumer匹配的URL数组
+     *
+     * @param consumer 用于匹配的URL
+     * @param providers 被匹配的URL的字符串
+     * @return 匹配的URL数组
+     */
     private List<URL> toUrlsWithoutEmpty(URL consumer, List<String> providers) {
         List<URL> urls = new ArrayList<URL>();
         if (providers != null && !providers.isEmpty()) {
             for (String provider : providers) {
                 provider = URL.decode(provider);
-                if (provider.contains("://")) {
-                    URL url = URL.valueOf(provider);
-                    if (UrlUtils.isMatch(consumer, url)) {
+                if (provider.contains("://")) {//是url
+                    URL url = URL.valueOf(provider);//将字符串转化为URL
+                    if (UrlUtils.isMatch(consumer, url)) {//匹配
                         urls.add(url);
                     }
                 }
