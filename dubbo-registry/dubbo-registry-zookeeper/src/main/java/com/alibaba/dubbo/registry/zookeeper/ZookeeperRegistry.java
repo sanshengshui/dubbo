@@ -309,14 +309,23 @@ public class ZookeeperRegistry extends FailbackRegistry {
         return toRootDir() + URL.encode(name);
     }
 
+    /**
+     * 获得分类路径数组
+     *
+     * Root + Service + Type
+     * @param url URL
+     * @return 分类路径数组
+     */
     private String[] toCategoriesPath(URL url) {
+        //获得分类数组
         String[] categories;
-        if (Constants.ANY_VALUE.equals(url.getParameter(Constants.CATEGORY_KEY))) {
+        if (Constants.ANY_VALUE.equals(url.getParameter(Constants.CATEGORY_KEY))) {// *时
             categories = new String[]{Constants.PROVIDERS_CATEGORY, Constants.CONSUMERS_CATEGORY,
                     Constants.ROUTERS_CATEGORY, Constants.CONFIGURATORS_CATEGORY};
         } else {
             categories = url.getParameter(Constants.CATEGORY_KEY, new String[]{Constants.DEFAULT_CATEGORY});
         }
+        //获得分类路径数组
         String[] paths = new String[categories.length];
         for (int i = 0; i < categories.length; i++) {
             paths[i] = toServicePath(url) + Constants.PATH_SEPARATOR + categories[i];
