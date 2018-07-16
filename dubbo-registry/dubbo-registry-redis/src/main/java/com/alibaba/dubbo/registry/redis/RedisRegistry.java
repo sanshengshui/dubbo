@@ -52,23 +52,42 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * com.alibaba.
  * RedisRegistry
- *
  */
 public class RedisRegistry extends FailbackRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(RedisRegistry.class);
 
+    /**
+     * 默认端口
+     */
     private static final int DEFAULT_REDIS_PORT = 6379;
 
+    /**
+     * 默认Redis根节点
+     */
     private final static String DEFAULT_ROOT = "dubbo";
 
+    /**
+     * Redis key过期机制执行器
+     */
     private final ScheduledExecutorService expireExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("DubboRegistryExpireTimer", true));
 
+    /**
+     * Redis key过期机制 Future
+     */
     private final ScheduledFuture<?> expireFuture;
 
+    /**
+     * Redis 根节点
+     */
     private final String root;
 
+    /**
+     * JedisPool 集合
+     * key：ip:port
+     */
     private final Map<String, JedisPool> jedisPools = new ConcurrentHashMap<String, JedisPool>();
 
     private final ConcurrentMap<String, Notifier> notifiers = new ConcurrentHashMap<String, Notifier>();
