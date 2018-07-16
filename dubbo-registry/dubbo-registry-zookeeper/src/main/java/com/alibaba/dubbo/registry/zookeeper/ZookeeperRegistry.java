@@ -373,8 +373,18 @@ public class ZookeeperRegistry extends FailbackRegistry {
         return urls;
     }
 
+    /**
+     * 获得providers中，和consumer匹配的URL数组
+     * 若不存在匹配，则创建'empty://'的URL返回。通过这样的方式，可以处理类似服务提供者为空的情况。
+     * @param consumer 用于匹配URL
+     * @param path 被匹配的URL的字符串
+     * @param providers 匹配的URL数组
+     * @return 匹配的URL数组
+     */
     private List<URL> toUrlsWithEmpty(URL consumer, String path, List<String> providers) {
+        //获得providers中，和consumer匹配的URL数组
         List<URL> urls = toUrlsWithoutEmpty(consumer, providers);
+        //若不存在匹配，则创建'empty://'的URL返回
         if (urls == null || urls.isEmpty()) {
             int i = path.lastIndexOf('/');
             String category = i < 0 ? path : path.substring(i + 1);
