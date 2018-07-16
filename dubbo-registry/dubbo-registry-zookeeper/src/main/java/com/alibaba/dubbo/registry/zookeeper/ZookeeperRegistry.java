@@ -196,30 +196,40 @@ public class ZookeeperRegistry extends FailbackRegistry {
                                 Constants.CHECK_KEY, String.valueOf(false)), listener);
                     }
                 }
+                //处理指定Service层的发起订阅,例如服务消费者的订阅的订阅
             } else {
+                //子节点数据数组
                 List<URL> urls = new ArrayList<URL>();
+                //循环分类数组
                 for (String path : toCategoriesPath(url)) {
+                    //获得url对应的监听器集合
                     ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
-                    if (listeners == null) {
+                    if (listeners == null) {//不存在，进行创建
                         zkListeners.putIfAbsent(url, new ConcurrentHashMap<NotifyListener, ChildListener>());
                         listeners = zkListeners.get(url);
                     }
+                    //获得ChildListener对象
                     ChildListener zkListener = listeners.get(listener);
-                    if (zkListener == null) {
+                    if (zkListener == null) {//不存在ChildListener对象，进行创建ChildListener对象
                         listeners.putIfAbsent(listener, new ChildListener() {
                             @Override
                             public void childChanged(String parentPath, List<String> currentChilds) {
+                                //变更时，调用'#notify(...)'方法，回调NotifyListener
                                 ZookeeperRegistry.this.notify(url, listener, toUrlsWithEmpty(url, parentPath, currentChilds));
                             }
                         });
                         zkListener = listeners.get(listener);
                     }
+                    //创建Type节点。该节点为持久节点。
                     zkClient.create(path, false);
+                    //向Zookeeper，PATH节点，发起订阅
                     List<String> children = zkClient.addChildListener(path, zkListener);
+                    //添加到'urls'中
                     if (children != null) {
                         urls.addAll(toUrlsWithEmpty(url, path, children));
                     }
                 }
+                //首次全量数据获取完成时，调用'#notify(...)'方法，回调NotifyListener
                 notify(url, listener, urls);
             }
         } catch (Throwable e) {
