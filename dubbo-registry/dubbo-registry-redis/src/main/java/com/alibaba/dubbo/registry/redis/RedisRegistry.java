@@ -387,27 +387,34 @@ public class RedisRegistry extends FailbackRegistry {
 
     @Override
     public void doSubscribe(final URL url, final NotifyListener listener) {
+        //获得服务路径，例如:'/dubbo/com.alibaba.dubbo.demo.DemoService'
         String service = toServicePath(url);
+        //获得通知器Notifier对象
         Notifier notifier = notifiers.get(service);
+        //不存在，则创建Notifier对象
         if (notifier == null) {
             Notifier newNotifier = new Notifier(service);
             notifiers.putIfAbsent(service, newNotifier);
             notifier = notifiers.get(service);
-            if (notifier == newNotifier) {
+            if (notifier == newNotifier) {//保证并发的情况下，有且仅有一个启动
                 notifier.start();
             }
         }
         boolean success = false;
         RpcException exception = null;
+        //循环'jedisPools',仅有一个Redis发起订阅
         for (Map.Entry<String, JedisPool> entry : jedisPools.entrySet()) {
             JedisPool jedisPool = entry.getValue();
             try {
                 Jedis jedis = jedisPool.getResource();
                 try {
+                    //处理所有的Service层的发起订阅，例如监控中心的订阅
                     if (service.endsWith(Constants.ANY_VALUE)) {
                         admin = true;
+                        //获得分类层集合，例如:'/dubbo/com.alibaba.dubbo.demo.DemoService/providers'
                         Set<String> keys = jedis.keys(service);
                         if (keys != null && !keys.isEmpty()) {
+                            //按照服务聚合URL集合
                             Map<String, Set<String>> serviceKeys = new HashMap<String, Set<String>>();
                             for (String key : keys) {
                                 String serviceKey = toServicePath(key);
@@ -418,14 +425,18 @@ public class RedisRegistry extends FailbackRegistry {
                                 }
                                 sk.add(key);
                             }
+                            //循环serviceKeys,按照每个Service层的发起通知
                             for (Set<String> sk : serviceKeys.values()) {
                                 doNotify(jedis, sk, url, Arrays.asList(listener));
                             }
                         }
+                        //处理指定Service层的发起通知
                     } else {
                         doNotify(jedis, jedis.keys(service + Constants.PATH_SEPARATOR + Constants.ANY_VALUE), url, Arrays.asList(listener));
                     }
+                    //标记成功
                     success = true;
+                    //结束，仅仅从一台服务器读取数据
                     break; // Just read one server's data
                 } finally {
                     jedis.close();
@@ -434,10 +445,11 @@ public class RedisRegistry extends FailbackRegistry {
                 exception = new RpcException("Failed to subscribe service from redis registry. registry: " + entry.getKey() + ", service: " + url + ", cause: " + t.getMessage(), t);
             }
         }
+        //处理异常
         if (exception != null) {
-            if (success) {
+            if (success) {//虽然发生异常，但是结果成功
                 logger.warn(exception.getMessage(), exception);
-            } else {
+            } else {//最终未成功
                 throw exception;
             }
         }
