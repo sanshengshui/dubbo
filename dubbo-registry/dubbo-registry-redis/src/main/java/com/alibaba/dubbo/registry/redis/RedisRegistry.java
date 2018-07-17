@@ -527,6 +527,13 @@ public class RedisRegistry extends FailbackRegistry {
         return i > 0 ? categoryPath.substring(i + 1) : categoryPath;
     }
 
+    /**
+     * 获得服务路径，主要截掉多余的部分
+     *
+     * Root + Type
+     * @param categoryPath 分类路径
+     * @return 服务路径
+     */
     private String toServicePath(String categoryPath) {
         int i;
         if (categoryPath.startsWith(root)) {
@@ -537,6 +544,12 @@ public class RedisRegistry extends FailbackRegistry {
         return i > 0 ? categoryPath.substring(0, i) : categoryPath;
     }
 
+    /**
+     * 获得服务路径
+     * Root + Type
+     * @param url URL
+     * @return 服务路径
+     */
     private String toServicePath(URL url) {
         return root + url.getServiceInterface();
     }
