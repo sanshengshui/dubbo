@@ -311,17 +311,22 @@ public class RedisRegistry extends FailbackRegistry {
     public void doRegister(URL url) {
         String key = toCategoryPath(url);
         String value = url.toFullString();
+        //计算过期时间
         String expire = String.valueOf(System.currentTimeMillis() + expirePeriod);
         boolean success = false;
         RpcException exception = null;
+        //向Redis注册
         for (Map.Entry<String, JedisPool> entry : jedisPools.entrySet()) {
             JedisPool jedisPool = entry.getValue();
             try {
+                //写入Redis Map键
                 Jedis jedis = jedisPool.getResource();
                 try {
+                    //发布Redis注册事件
                     jedis.hset(key, value, expire);
                     jedis.publish(key, Constants.REGISTER);
                     success = true;
+                    //如果服务器端已同步数据，只需写入单台机器
                     if (!replicate) {
                         break; //  If the server side has synchronized data, just write a single machine
                     }
@@ -332,10 +337,11 @@ public class RedisRegistry extends FailbackRegistry {
                 exception = new RpcException("Failed to register service to redis registry. registry: " + entry.getKey() + ", service: " + url + ", cause: " + t.getMessage(), t);
             }
         }
+        //处理异常
         if (exception != null) {
-            if (success) {
+            if (success) {//虽然发生异常，但是结果成功
                 logger.warn(exception.getMessage(), exception);
-            } else {
+            } else {//最终未成功
                 throw exception;
             }
         }
