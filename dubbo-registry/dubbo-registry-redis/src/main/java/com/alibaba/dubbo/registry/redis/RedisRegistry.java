@@ -353,14 +353,18 @@ public class RedisRegistry extends FailbackRegistry {
         String value = url.toFullString();
         RpcException exception = null;
         boolean success = false;
+        //向Redis注册
         for (Map.Entry<String, JedisPool> entry : jedisPools.entrySet()) {
             JedisPool jedisPool = entry.getValue();
             try {
                 Jedis jedis = jedisPool.getResource();
                 try {
+                    //删除 Redis Map键
                     jedis.hdel(key, value);
+                    //发布Redis取消注册事件
                     jedis.publish(key, Constants.UNREGISTER);
                     success = true;
+                    //如果服务器端已同步数据，只需写入单台机器
                     if (!replicate) {
                         break; //  If the server side has synchronized data, just write a single machine
                     }
@@ -371,10 +375,11 @@ public class RedisRegistry extends FailbackRegistry {
                 exception = new RpcException("Failed to unregister service to redis registry. registry: " + entry.getKey() + ", service: " + url + ", cause: " + t.getMessage(), t);
             }
         }
+        //处理异常
         if (exception != null) {
-            if (success) {
+            if (success) {//虽然发生异常，但是结果成功
                 logger.warn(exception.getMessage(), exception);
-            } else {
+            } else {//最终未成功
                 throw exception;
             }
         }
@@ -524,6 +529,12 @@ public class RedisRegistry extends FailbackRegistry {
         return root + url.getServiceInterface();
     }
 
+    /**
+     * 获得分类路径
+     * Root + Service + Type
+     * @param url
+     * @return 分类路径
+     */
     private String toCategoryPath(URL url) {
         return toServicePath(url) + Constants.PATH_SEPARATOR + url.getParameter(Constants.CATEGORY_KEY, Constants.DEFAULT_CATEGORY);
     }
