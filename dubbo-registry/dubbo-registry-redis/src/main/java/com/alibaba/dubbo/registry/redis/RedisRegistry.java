@@ -296,12 +296,15 @@ public class RedisRegistry extends FailbackRegistry {
 
     @Override
     public void destroy() {
+        //父类关闭
         super.destroy();
+        //关闭定时任务
         try {
             expireFuture.cancel(true);
         } catch (Throwable t) {
             logger.warn(t.getMessage(), t);
         }
+        //关闭通知器
         try {
             for (Notifier notifier : notifiers.values()) {
                 notifier.shutdown();
@@ -309,6 +312,7 @@ public class RedisRegistry extends FailbackRegistry {
         } catch (Throwable t) {
             logger.warn(t.getMessage(), t);
         }
+        //关闭连接池
         for (Map.Entry<String, JedisPool> entry : jedisPools.entrySet()) {
             JedisPool jedisPool = entry.getValue();
             try {
