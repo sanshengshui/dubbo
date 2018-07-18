@@ -282,7 +282,7 @@ public class RedisRegistry extends FailbackRegistry {
             try {
                 Jedis jedis = jedisPool.getResource();
                 try {
-                    if (jedis.isConnected()) {
+                    if (jedis.isConnected()) {//至少一个Redis节点可用
                         return true; // At least one single machine is available.
                     }
                 } finally {
