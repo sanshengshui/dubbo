@@ -243,17 +243,21 @@ public class RedisRegistry extends FailbackRegistry {
 
     // The monitoring center is responsible for deleting outdated dirty data
     private void clean(Jedis jedis) {
+        //获得所有服务
         Set<String> keys = jedis.keys(root + Constants.ANY_VALUE);
         if (keys != null && !keys.isEmpty()) {
             for (String key : keys) {
+                //获得所有URL
                 Map<String, String> values = jedis.hgetAll(key);
                 if (values != null && values.size() > 0) {
                     boolean delete = false;
                     long now = System.currentTimeMillis();
                     for (Map.Entry<String, String> entry : values.entrySet()) {
                         URL url = URL.valueOf(entry.getKey());
+                        //动态节点
                         if (url.getParameter(Constants.DYNAMIC_KEY, true)) {
                             long expire = Long.parseLong(entry.getValue());
+                            //已经过期
                             if (expire < now) {
                                 jedis.hdel(key, entry.getKey());
                                 delete = true;
@@ -263,6 +267,7 @@ public class RedisRegistry extends FailbackRegistry {
                             }
                         }
                     }
+                    //若删除成功，发布'unregister'事件
                     if (delete) {
                         jedis.publish(key, Constants.UNREGISTER);
                     }
