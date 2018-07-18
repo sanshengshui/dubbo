@@ -208,19 +208,27 @@ public class RedisRegistry extends FailbackRegistry {
         for (Map.Entry<String, JedisPool> entry : jedisPools.entrySet()) {
             JedisPool jedisPool = entry.getValue();
             try {
+
                 Jedis jedis = jedisPool.getResource();
                 try {
+                    //循环已注册的URL集合
                     for (URL url : new HashSet<URL>(getRegistered())) {
+                        //动态节点
                         if (url.getParameter(Constants.DYNAMIC_KEY, true)) {
+                            //获得分类路径
                             String key = toCategoryPath(url);
+                            //写入Redis Map中
                             if (jedis.hset(key, url.toFullString(), String.valueOf(System.currentTimeMillis() + expirePeriod)) == 1) {
+                                //发布'register'事件
                                 jedis.publish(key, Constants.REGISTER);
                             }
                         }
                     }
+                    //监控中心负责删除过期脏数据
                     if (admin) {
                         clean(jedis);
                     }
+                    //如果服务器端已同步数据，只需写入单台机器
                     if (!replicate) {
                         break;//  If the server side has synchronized data, just write a single machine
                     }
@@ -525,11 +533,25 @@ public class RedisRegistry extends FailbackRegistry {
         }
     }
 
+    /**
+     * 获得服务名，从服务路径上
+     *
+     * Service
+     *
+     * @param categoryPath 服务路径
+     * @return 服务名
+     */
     private String toServiceName(String categoryPath) {
         String servicePath = toServicePath(categoryPath);
         return servicePath.startsWith(root) ? servicePath.substring(root.length()) : servicePath;
     }
 
+    /**
+     * 获得分类名，从分类路径上
+     * Type
+     * @param categoryPath 分类路径
+     * @return 分类名
+     */
     private String toCategoryName(String categoryPath) {
         int i = categoryPath.lastIndexOf(Constants.PATH_SEPARATOR);
         return i > 0 ? categoryPath.substring(i + 1) : categoryPath;
