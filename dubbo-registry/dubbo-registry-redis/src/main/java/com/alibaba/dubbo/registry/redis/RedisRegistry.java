@@ -656,13 +656,38 @@ public class RedisRegistry extends FailbackRegistry {
 
     private class Notifier extends Thread {
 
+        /**
+         * 服务名 Root + Service
+         */
         private final String service;
+        /**
+         * 需要忽略连接的次数
+         */
         private final AtomicInteger connectSkip = new AtomicInteger();
+        /**
+         * 已经忽略连接的次数
+         */
         private final AtomicInteger connectSkiped = new AtomicInteger();
+
+        /**
+         * 随机
+         */
         private final Random random = new Random();
+        /**
+         * Jedis
+         */
         private volatile Jedis jedis;
+        /**
+         * 是否首次
+         */
         private volatile boolean first = true;
+        /**
+         * 是否运行中
+         */
         private volatile boolean running = true;
+        /**
+         * 连接次数随机数
+         */
         private volatile int connectRandom;
 
         public Notifier(String service) {
@@ -672,12 +697,15 @@ public class RedisRegistry extends FailbackRegistry {
         }
 
         private void resetSkip() {
+            //重置需要连接的次数
             connectSkip.set(0);
+            //重置已忽略次数和随机数
             connectSkiped.set(0);
             connectRandom = 0;
         }
 
         private boolean isSkip() {
+            //获得需要忽略连接的总次数.如果超过10,则加上一个10以内的随机数.
             int skip = connectSkip.get(); // Growth of skipping times
             if (skip >= 10) { // If the number of skipping times increases by more than 10, take the random number
                 if (connectRandom == 0) {
@@ -685,10 +713,13 @@ public class RedisRegistry extends FailbackRegistry {
                 }
                 skip = 10 + connectRandom;
             }
+            //自增忽略次数.若忽略次数不够,则继续忽略.
             if (connectSkiped.getAndIncrement() < skip) { // Check the number of skipping times
                 return true;
             }
+            //增加需要忽略的次数
             connectSkip.incrementAndGet();
+            //重置已忽略次数和随机数
             connectSkiped.set(0);
             connectRandom = 0;
             return false;
