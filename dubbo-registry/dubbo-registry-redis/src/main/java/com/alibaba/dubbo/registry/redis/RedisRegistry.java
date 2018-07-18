@@ -459,12 +459,14 @@ public class RedisRegistry extends FailbackRegistry {
     public void doUnsubscribe(URL url, NotifyListener listener) {
     }
 
+    //@params key 分类数组，例如:'/dubbo/com.alibaba.dubbo.demo.DemoService/providers'
     private void doNotify(Jedis jedis, String key) {
         for (Map.Entry<URL, Set<NotifyListener>> entry : new HashMap<URL, Set<NotifyListener>>(getSubscribed()).entrySet()) {
             doNotify(jedis, Arrays.asList(key), entry.getKey(), new HashSet<NotifyListener>(entry.getValue()));
         }
     }
 
+    //@params key分类数组 元素例如: '/dubbo/com.alibaba.dubbo.demo.DemoService/providers'
     private void doNotify(Jedis jedis, Collection<String> keys, URL url, Collection<NotifyListener> listeners) {
         if (keys == null || keys.isEmpty()
                 || listeners == null || listeners.isEmpty()) {
@@ -472,32 +474,37 @@ public class RedisRegistry extends FailbackRegistry {
         }
         long now = System.currentTimeMillis();
         List<URL> result = new ArrayList<URL>();
-        List<String> categories = Arrays.asList(url.getParameter(Constants.CATEGORY_KEY, new String[0]));
-        String consumerService = url.getServiceInterface();
+        List<String> categories = Arrays.asList(url.getParameter(Constants.CATEGORY_KEY, new String[0]));//分类数组
+        String consumerService = url.getServiceInterface();//服务接口
+        //循环分类层,例如:'/dubbo/com.alibaba.dubbo.demo.DemoService/providers'
         for (String key : keys) {
+            //若服务不匹配，返回
             if (!Constants.ANY_VALUE.equals(consumerService)) {
                 String prvoiderService = toServiceName(key);
                 if (!prvoiderService.equals(consumerService)) {
                     continue;
                 }
             }
+            //若订阅的不包含该分类，返回
             String category = toCategoryName(key);
             if (!categories.contains(Constants.ANY_VALUE) && !categories.contains(category)) {
                 continue;
             }
+            //获得所有URL数组
             List<URL> urls = new ArrayList<URL>();
             Map<String, String> values = jedis.hgetAll(key);
             if (values != null && values.size() > 0) {
                 for (Map.Entry<String, String> entry : values.entrySet()) {
                     URL u = URL.valueOf(entry.getKey());
-                    if (!u.getParameter(Constants.DYNAMIC_KEY, true)
-                            || Long.parseLong(entry.getValue()) >= now) {
+                    if (!u.getParameter(Constants.DYNAMIC_KEY, true)//非动态节点，因为动态节点，不受过期的限制
+                            || Long.parseLong(entry.getValue()) >= now) {//未过期
                         if (UrlUtils.isMatch(url, u)) {
                             urls.add(u);
                         }
                     }
                 }
             }
+            //若不存在匹配，则创建'empty://'的URL返回，用于清空该服务的该分类
             if (urls.isEmpty()) {
                 urls.add(url.setProtocol(Constants.EMPTY_PROTOCOL)
                         .setAddress(Constants.ANYHOST_VALUE)
@@ -512,6 +519,7 @@ public class RedisRegistry extends FailbackRegistry {
         if (result == null || result.isEmpty()) {
             return;
         }
+        //全局数据获取完成时，调用'super#notify(...)'方法，回调NotifyListener
         for (NotifyListener listener : listeners) {
             notify(url, listener, result);
         }
