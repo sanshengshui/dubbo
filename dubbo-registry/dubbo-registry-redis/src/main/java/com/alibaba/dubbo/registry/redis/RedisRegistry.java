@@ -729,6 +729,7 @@ public class RedisRegistry extends FailbackRegistry {
         public void run() {
             while (running) {
                 try {
+                    //是否跳过本次Redis连接
                     if (!isSkip()) {
                         try {
                             for (Map.Entry<String, JedisPool> entry : jedisPools.entrySet()) {
@@ -736,6 +737,7 @@ public class RedisRegistry extends FailbackRegistry {
                                 try {
                                     jedis = jedisPool.getResource();
                                     try {
+                                        //监控中心
                                         if (service.endsWith(Constants.ANY_VALUE)) {
                                             if (!first) {
                                                 first = false;
@@ -747,13 +749,16 @@ public class RedisRegistry extends FailbackRegistry {
                                                 }
                                                 resetSkip();
                                             }
+                                            //批订阅
                                             jedis.psubscribe(new NotifySub(jedisPool), service); // blocking
+                                            //服务提供者或消费者
                                         } else {
                                             if (!first) {
                                                 first = false;
                                                 doNotify(jedis, service);
                                                 resetSkip();
                                             }
+                                            //批订阅
                                             jedis.psubscribe(new NotifySub(jedisPool), service + Constants.PATH_SEPARATOR + Constants.ANY_VALUE); // blocking
                                         }
                                         break;
