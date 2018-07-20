@@ -816,8 +816,14 @@ public class ExtensionLoader<T> {
         return cachedAdaptiveClass = createAdaptiveExtensionClass();
     }
 
+    /**
+     * 自动生成自适应的代码实现,并编译后返回该类.
+     * @return 类
+     */
     private Class<?> createAdaptiveExtensionClass() {
+        //自动生成自适应扩展的代码实现的字符串
         String code = createAdaptiveExtensionClassCode();
+        //编译代码,并返回该类
         ClassLoader classLoader = findClassLoader();
         com.alibaba.dubbo.common.compiler.Compiler compiler = ExtensionLoader.getExtensionLoader(com.alibaba.dubbo.common.compiler.Compiler.class).getAdaptiveExtension();
         return compiler.compile(code, classLoader);
