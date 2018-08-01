@@ -58,11 +58,13 @@ public class Main {
 
     public static void main(String[] args) {
         try {
+            //若main函数参数传入为空，从配置中加载
             if (args == null || args.length == 0) {
-                String config = ConfigUtils.getProperty(CONTAINER_KEY, loader.getDefaultExtensionName());
+                String config = ConfigUtils.getProperty(CONTAINER_KEY, loader.getDefaultExtensionName());//默认"spring"
                 args = Constants.COMMA_SPLIT_PATTERN.split(config);
             }
 
+            //加载容器数组
             final List<Container> containers = new ArrayList<Container>();
             for (int i = 0; i < args.length; i++) {
                 containers.add(loader.getExtension(args[i]));
@@ -74,6 +76,7 @@ public class Main {
                     @Override
                     public void run() {
                         for (Container container : containers) {
+                            //关闭容器
                             try {
                                 container.stop();
                                 logger.info("Dubbo " + container.getClass().getSimpleName() + " stopped!");
@@ -81,32 +84,40 @@ public class Main {
                                 logger.error(t.getMessage(), t);
                             }
                             try {
+                                //获得ReentrantLock
                                 LOCK.lock();
+                                //唤醒Main主线程的等待
                                 STOP.signal();
                             } finally {
+                                //释放ReentrantLock
                                 LOCK.unlock();
                             }
                         }
                     }
                 });
             }
-
+            //启动容器
             for (Container container : containers) {
                 container.start();
                 logger.info("Dubbo " + container.getClass().getSimpleName() + " started!");
             }
+            //输出提示，启动成功
             System.out.println(new SimpleDateFormat("[yyyy-MM-dd HH:mm:ss]").format(new Date()) + " Dubbo service server started!");
         } catch (RuntimeException e) {
+            //发生异常，JVM退出
             e.printStackTrace();
             logger.error(e.getMessage(), e);
             System.exit(1);
         }
         try {
+            //获得ReentrantLock
             LOCK.lock();
+            //释放锁，并且将自己沉睡，等待唤醒
             STOP.await();
         } catch (InterruptedException e) {
             logger.warn("Dubbo service server stopped, interrupted by other thread!", e);
         } finally {
+            //释放ReentrantLock
             LOCK.unlock();
         }
     }
