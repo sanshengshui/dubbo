@@ -43,12 +43,26 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
 
     private static final Logger logger = LoggerFactory
             .getLogger(AbstractClusterInvoker.class);
+    /**
+     * Directory 对象
+     */
     protected final Directory<T> directory;
-
+    /**
+     * 集群时是否排除非可用(available)的Invoker,默认为true
+     */
     protected final boolean availablecheck;
-
+    /**
+     * 是否已经销毁
+     */
     private AtomicBoolean destroyed = new AtomicBoolean(false);
 
+    /**
+     * 粘滞连接 Invoker
+     *
+     * https://dubbo.gitbooks.io/dubbo-user-book/demos/stickiness.html
+     * 粘滞连接用于有状态服务，尽可能让客户端总是向同一提供者发起调用，除非该提供者挂了，再连另一台。
+     * 粘滞连接将自动开启延迟连接，以减少长连接数。
+     */
     private volatile Invoker<T> stickyInvoker = null;
 
     public AbstractClusterInvoker(Directory<T> directory) {
@@ -56,11 +70,13 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
     }
 
     public AbstractClusterInvoker(Directory<T> directory, URL url) {
+        //初始化directory
         if (directory == null)
             throw new IllegalArgumentException("service directory == null");
 
         this.directory = directory;
         //sticky: invoker.isAvailable() should always be checked before using when availablecheck is true.
+        //初始化 availablecheck
         this.availablecheck = url.getParameter(Constants.CLUSTER_AVAILABLE_CHECK_KEY, Constants.DEFAULT_CLUSTER_AVAILABLE_CHECK);
     }
 
