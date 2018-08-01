@@ -279,6 +279,7 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
     protected abstract Result doInvoke(Invocation invocation, List<Invoker<T>> invokers,
                                        LoadBalance loadbalance) throws RpcException;
 
+    //获得所有服务提供者Invoker集合
     protected List<Invoker<T>> list(Invocation invocation) throws RpcException {
         List<Invoker<T>> invokers = directory.list(invocation);
         return invokers;
