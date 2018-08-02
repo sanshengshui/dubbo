@@ -258,16 +258,24 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
         return null;
     }
 
+
     @Override
     public Result invoke(final Invocation invocation) throws RpcException {
+        /**
+         * 校验是否销毁
+         */
         checkWhetherDestroyed();
+        //获得LoadBalance对象
         LoadBalance loadbalance = null;
+        //获得所有服务提供者Invoker集合
         List<Invoker<T>> invokers = list(invocation);
         if (invokers != null && !invokers.isEmpty()) {
             loadbalance = ExtensionLoader.getExtensionLoader(LoadBalance.class).getExtension(invokers.get(0).getUrl()
                     .getMethodParameter(invocation.getMethodName(), Constants.LOADBALANCE_KEY, Constants.DEFAULT_LOADBALANCE));
         }
+        //设置调用编号，若是异步调用
         RpcUtils.attachInvocationIdIfAsync(getUrl(), invocation);
+        //执行调用
         return doInvoke(invocation, invokers, loadbalance);
     }
 
