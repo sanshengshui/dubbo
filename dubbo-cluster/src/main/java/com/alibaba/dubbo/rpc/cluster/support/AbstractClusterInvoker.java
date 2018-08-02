@@ -92,10 +92,12 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
 
     @Override
     public boolean isAvailable() {
-        Invoker<T> invoker = stickyInvoker;
+        //如有粘滞连接Invoker,基于它判断。
+        Invoker<T> invoker = stickyInvoker;//指向，避免并发
         if (invoker != null) {
             return invoker.isAvailable();
         }
+        //基于Directory判断
         return directory.isAvailable();
     }
 
