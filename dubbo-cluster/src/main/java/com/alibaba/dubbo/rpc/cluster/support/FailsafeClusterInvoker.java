@@ -45,11 +45,16 @@ public class FailsafeClusterInvoker<T> extends AbstractClusterInvoker<T> {
     @Override
     public Result doInvoke(Invocation invocation, List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
         try {
+            //检查invokers即可用Invoker集合是否为空，如果为空，那么抛出异常
             checkInvokers(invokers, invocation);
+            //根据负载均衡机制从invokers中选择一个Invoker
             Invoker<T> invoker = select(loadbalance, invocation, invokers, null);
+            //RPC调用得到Result
             return invoker.invoke(invocation);
         } catch (Throwable e) {
+            //打印异常日志
             logger.error("Failsafe ignore exception: " + e.getMessage(), e);
+            //忽略异常
             return new RpcResult(); // ignore
         }
     }

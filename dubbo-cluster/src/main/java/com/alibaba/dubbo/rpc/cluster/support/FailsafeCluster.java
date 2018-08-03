@@ -23,7 +23,7 @@ import com.alibaba.dubbo.rpc.cluster.Directory;
 
 /**
  * {@link FailsafeClusterInvoker}
- *
+ *  实现Cluster接口，失败安全，出现异常时，直接忽略。通常用于写入审计日志等操作
  */
 public class FailsafeCluster implements Cluster {
 
