@@ -60,17 +60,37 @@ import java.util.Set;
 public class RegistryDirectory<T> extends AbstractDirectory<T> implements NotifyListener {
 
     private static final Logger logger = LoggerFactory.getLogger(RegistryDirectory.class);
-
+    /**
+     * Cluster$Adaptive 对象
+     */
     private static final Cluster cluster = ExtensionLoader.getExtensionLoader(Cluster.class).getAdaptiveExtension();
-
+    /**
+     * RouterFactory$Adaptive对象
+     */
     private static final RouterFactory routerFactory = ExtensionLoader.getExtensionLoader(RouterFactory.class).getAdaptiveExtension();
-
+    /**
+     * ConfiguratorFactory$Adaptive对象
+     */
     private static final ConfiguratorFactory configuratorFactory = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class).getAdaptiveExtension();
+    //=========服务消费者相关BEGIN ==========
     private final String serviceKey; // Initialization at construction time, assertion not null
+    /**
+     * 服务类型,例如:com.alibaba.dubbo.demo.DemoService
+     */
     private final Class<T> serviceType; // Initialization at construction time, assertion not null
+    /**
+     * Consumer URL的配置项Map
+     */
     private final Map<String, String> queryMap; // Initialization at construction time, assertion not null
     private final URL directoryUrl; // Initialization at construction time, assertion not null, and always assign non null value
+    /**
+     * 服务方法数组
+     */
     private final String[] serviceMethods;
+    /**
+     * 是否引用多分组
+     * 服务分组: https://dubbo.gitbooks.io/dubbo-user-book/demos/service-group.html
+     */
     private final boolean multiGroup;
     private Protocol protocol; // Initialization at the time of injection, the assertion is not null
     private Registry registry; // Initialization at the time of injection, the assertion is not null
