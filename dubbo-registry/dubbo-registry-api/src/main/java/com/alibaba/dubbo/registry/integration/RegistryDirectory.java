@@ -296,9 +296,13 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     }
 
     /**
+     * 根据invokerURL列表转换为invoker列表。转换规则如下:
      * Convert the invokerURL list to the Invoker Map. The rules of the conversion are as follows:
+     * 如果url已经被转换为invoker,则不在重新引用，直接从缓存中获取，注意如果url中任何一个参数变更也会重新引用
      * 1.If URL has been converted to invoker, it is no longer re-referenced and obtained directly from the cache, and notice that any parameter changes in the URL will be re-referenced.
+     * 如果传入的invoker列表不为空，则表示最新的invoker列表
      * 2.If the incoming invoker list is not empty, it means that it is the latest invoker list
+     * 如果传入的invokerUrl列表是空，则表示只是下发的override规则或route规则，需要重新交叉对比，决定是否需要重新引用
      * 3.If the list of incoming invokerUrl is empty, It means that the rule is only a override rule or a route rule, which needs to be re-contrasted to decide whether to re-reference.
      *
      * @param invokerUrls this parameter can't be null
@@ -713,8 +717,14 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         return methodInvokerMap;
     }
 
+    /**
+     * InvokerComparator,实现Comparator接口，Invoker排序器实现类，根据URL升序。
+     */
     private static class InvokerComparator implements Comparator<Invoker<?>> {
 
+        /**
+         * 单例
+         */
         private static final InvokerComparator comparator = new InvokerComparator();
 
         private InvokerComparator() {
@@ -733,10 +743,14 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
 
     /**
      * The delegate class, which is mainly used to store the URL address sent by the registry,and can be reassembled on the basis of providerURL queryMap overrideMap for re-refer.
-     *
      * @param <T>
      */
     private static class InvokerDelegate<T> extends InvokerWrapper<T> {
+        /**
+         *  服务提供者 URL
+         *
+         * 未经过配置合并
+         */
         private URL providerUrl;
 
         public InvokerDelegate(Invoker<T> invoker, URL url, URL providerUrl) {
