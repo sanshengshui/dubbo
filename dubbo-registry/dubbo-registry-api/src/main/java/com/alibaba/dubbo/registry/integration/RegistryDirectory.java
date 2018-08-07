@@ -311,31 +311,43 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
     private void refreshInvoker(List<URL> invokerUrls) {
         if (invokerUrls != null && invokerUrls.size() == 1 && invokerUrls.get(0) != null
                 && Constants.EMPTY_PROTOCOL.equals(invokerUrls.get(0).getProtocol())) {
+            //设置禁止访问
             this.forbidden = true; // Forbid to access
+            //methodInvokerMap 置空
             this.methodInvokerMap = null; // Set the method invoker map to null
+            //销毁所有Invoker集合
             destroyAllInvokers(); // Close all invokers
         } else {
+            //设置允许访问
             this.forbidden = false; // Allow to access
+            //引用老的urlInvokerMap
             Map<String, Invoker<T>> oldUrlInvokerMap = this.urlInvokerMap; // local reference
+            //传入的invokerUrls为空,说明是路由规则或配置规则发生改变,此时invokerUrls是空的,直接使用cachedInvokerUrls.
             if (invokerUrls.isEmpty() && this.cachedInvokerUrls != null) {
                 invokerUrls.addAll(this.cachedInvokerUrls);
+                //传入的invokerUrls非空,更新cachedInvokerUrls.
             } else {
                 this.cachedInvokerUrls = new HashSet<URL>();
                 this.cachedInvokerUrls.addAll(invokerUrls);//Cached invoker urls, convenient for comparison
             }
+            //忽略,若无invokerUrls
             if (invokerUrls.isEmpty()) {
                 return;
             }
+            //将传入的invokerUrls,转成新的urlInvokerMap
             Map<String, Invoker<T>> newUrlInvokerMap = toInvokers(invokerUrls);// Translate url list to Invoker map
+            //转换成新的methodInvokerMap
             Map<String, List<Invoker<T>>> newMethodInvokerMap = toMethodInvokers(newUrlInvokerMap); // Change method name to map Invoker Map
             // state change
-            // If the calculation is wrong, it is not processed.
+            // If the calculation is wrong, it is not processed.如果计算错误,则不进行处理.
             if (newUrlInvokerMap == null || newUrlInvokerMap.size() == 0) {
                 logger.error(new IllegalStateException("urls to invokers error .invokerUrls.size :" + invokerUrls.size() + ", invoker.size :0. urls :" + invokerUrls.toString()));
                 return;
             }
+            // 若服务引用多 group ，则按照 method + group 聚合 Invoker 集合
             this.methodInvokerMap = multiGroup ? toMergeMethodInvokerMap(newMethodInvokerMap) : newMethodInvokerMap;
             this.urlInvokerMap = newUrlInvokerMap;
+            // 销毁不再使用的 Invoker 集合
             try {
                 destroyUnusedInvokers(oldUrlInvokerMap, newUrlInvokerMap); // Close the unused Invoker
             } catch (Exception e) {
