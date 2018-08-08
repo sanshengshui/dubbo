@@ -26,10 +26,13 @@ import java.util.List;
 
 /**
  * StaticDirectory
+ * 实现AbstractDirectory抽象类，静态Directory实现类，逻辑比较简单，将传入的invokers集合，封装成静态的Directory对象。
  *
  */
 public class StaticDirectory<T> extends AbstractDirectory<T> {
-
+    /**
+     * Invoker集合
+     */
     private final List<Invoker<T>> invokers;
 
     public StaticDirectory(List<Invoker<T>> invokers) {
@@ -45,6 +48,7 @@ public class StaticDirectory<T> extends AbstractDirectory<T> {
     }
 
     public StaticDirectory(URL url, List<Invoker<T>> invokers, List<Router> routers) {
+        // 默认使用 `url` 参数。当它为空时，使用 `invokers[0].url` 。
         super(url == null && invokers != null && !invokers.isEmpty() ? invokers.get(0).getUrl() : url, routers);
         if (invokers == null || invokers.isEmpty())
             throw new IllegalArgumentException("invokers == null");
@@ -58,9 +62,11 @@ public class StaticDirectory<T> extends AbstractDirectory<T> {
 
     @Override
     public boolean isAvailable() {
+        //若已经销毁，则不可用
         if (isDestroyed()) {
             return false;
         }
+        // 任一一个 Invoker 可用，则为可用
         for (Invoker<T> invoker : invokers) {
             if (invoker.isAvailable()) {
                 return true;
@@ -71,13 +77,17 @@ public class StaticDirectory<T> extends AbstractDirectory<T> {
 
     @Override
     public void destroy() {
+        // 若已经销毁， 跳过
         if (isDestroyed()) {
             return;
         }
+        // 销毁
         super.destroy();
+        // 销毁每个 Invoker
         for (Invoker<T> invoker : invokers) {
             invoker.destroy();
         }
+        // 清空 Invoker 集合
         invokers.clear();
     }
 
