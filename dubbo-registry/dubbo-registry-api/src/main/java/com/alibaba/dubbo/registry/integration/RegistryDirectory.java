@@ -358,10 +358,13 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
 
     private Map<String, List<Invoker<T>>> toMergeMethodInvokerMap(Map<String, List<Invoker<T>>> methodMap) {
         Map<String, List<Invoker<T>>> result = new HashMap<String, List<Invoker<T>>>();
+        // 循环方法，按照 method + group 聚合 Invoker 集合
         for (Map.Entry<String, List<Invoker<T>>> entry : methodMap.entrySet()) {
             String method = entry.getKey();
             List<Invoker<T>> invokers = entry.getValue();
+            // 按照 Group 聚合 Invoker 集合的结果。其中，KEY：group VALUE：Invoker 集合。
             Map<String, List<Invoker<T>>> groupMap = new HashMap<String, List<Invoker<T>>>();
+            // 循环 Invoker 集合，按照 group 聚合 Invoker 集合
             for (Invoker<T> invoker : invokers) {
                 String group = invoker.getUrl().getParameter(Constants.GROUP_KEY, "");
                 List<Invoker<T>> groupInvokers = groupMap.get(group);
@@ -371,14 +374,17 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                 }
                 groupInvokers.add(invoker);
             }
+            // 大小为 1，使用第一个
             if (groupMap.size() == 1) {
                 result.put(method, groupMap.values().iterator().next());
+                // 大于 1，将每个 Group 的 Invoker 集合，创建成 Cluster Invoker 对象。
             } else if (groupMap.size() > 1) {
                 List<Invoker<T>> groupInvokers = new ArrayList<Invoker<T>>();
                 for (List<Invoker<T>> groupList : groupMap.values()) {
                     groupInvokers.add(cluster.join(new StaticDirectory<T>(groupList)));
                 }
                 result.put(method, groupInvokers);
+                // 大小为 0 ，使用原有值
             } else {
                 result.put(method, invokers);
             }
