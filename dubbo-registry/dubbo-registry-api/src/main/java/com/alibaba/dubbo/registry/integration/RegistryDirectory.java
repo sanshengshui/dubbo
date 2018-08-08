@@ -231,6 +231,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         if (isDestroyed()) {
             return;
         }
+        //取消订阅
         // unsubscribe.
         try {
             if (getConsumerUrl() != null && registry != null && registry.isAvailable()) {
@@ -239,8 +240,10 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         } catch (Throwable t) {
             logger.warn("unexpeced error when unsubscribe service " + serviceKey + "from registry" + registry.getUrl(), t);
         }
+        //标记已经销毁
         super.destroy(); // must be executed after unsubscribing
         try {
+            //销毁所有Invoker
             destroyAllInvokers();
         } catch (Throwable t) {
             logger.warn("Failed to destroy service " + serviceKey, t);
