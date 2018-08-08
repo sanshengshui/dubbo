@@ -631,10 +631,12 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
 
     /**
      * Close all invokers
+     * 销毁所有服务提供者Invoker
      */
     private void destroyAllInvokers() {
-        Map<String, Invoker<T>> localUrlInvokerMap = this.urlInvokerMap; // local reference
+        Map<String, Invoker<T>> localUrlInvokerMap = this.urlInvokerMap; // local reference 本地引用，避免并发问题
         if (localUrlInvokerMap != null) {
+            // 循环 urlInvokerMap ，销毁所有服务提供者 Invoker
             for (Invoker<T> invoker : new ArrayList<Invoker<T>>(localUrlInvokerMap.values())) {
                 try {
                     invoker.destroy();
@@ -642,8 +644,10 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                     logger.warn("Failed to destroy service " + serviceKey + " to provider " + invoker.getUrl(), t);
                 }
             }
+            // urlInvokerMap 清空
             localUrlInvokerMap.clear();
         }
+        // methodInvokerMap 置空
         methodInvokerMap = null;
     }
 
