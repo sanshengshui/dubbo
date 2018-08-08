@@ -753,9 +753,11 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
 
     @Override
     public boolean isAvailable() {
+        //若已销毁，返回不可用
         if (isDestroyed()) {
             return false;
         }
+        //任意一个Invoker可用，则返回可用
         Map<String, Invoker<T>> localUrlInvokerMap = urlInvokerMap;
         if (localUrlInvokerMap != null && localUrlInvokerMap.size() > 0) {
             for (Invoker<T> invoker : new ArrayList<Invoker<T>>(localUrlInvokerMap.values())) {
