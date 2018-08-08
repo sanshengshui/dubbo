@@ -568,18 +568,23 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
      * @return Mapping relation between Invoker and method
      */
     private Map<String, List<Invoker<T>>> toMethodInvokers(Map<String, Invoker<T>> invokersMap) {
+        //创建新的'methodInvokerMap'
         Map<String, List<Invoker<T>>> newMethodInvokerMap = new HashMap<String, List<Invoker<T>>>();
         // According to the methods classification declared by the provider URL, the methods is compatible with the registry to execute the filtered methods
+        //创建Invoker集合
         List<Invoker<T>> invokersList = new ArrayList<Invoker<T>>();
+        //按服务提供者URL所声明的methods分类，兼容注册中心执行路由过滤掉的methods
         if (invokersMap != null && invokersMap.size() > 0) {
+            //循环每个服务提供者Invoker
             for (Invoker<T> invoker : invokersMap.values()) {
                 String parameter = invoker.getUrl().getParameter(Constants.METHODS_KEY);
                 if (parameter != null && parameter.length() > 0) {
                     String[] methods = Constants.COMMA_SPLIT_PATTERN.split(parameter);
                     if (methods != null && methods.length > 0) {
+                        //循环每个方法，按照方法名为维度，聚合到'methodInvokerMap'中
                         for (String method : methods) {
                             if (method != null && method.length() > 0
-                                    && !Constants.ANY_VALUE.equals(method)) {
+                                    && !Constants.ANY_VALUE.equals(method)) { // 当服务提供者的方法为 "*" ，代表泛化调用
                                 List<Invoker<T>> methodInvokers = newMethodInvokerMap.get(method);
                                 if (methodInvokers == null) {
                                     methodInvokers = new ArrayList<Invoker<T>>();
@@ -590,11 +595,15 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                         }
                     }
                 }
+                //添加到'invokersList'中
                 invokersList.add(invoker);
             }
         }
+        //路由全'invokerList',匹配合适的Invoker集合
         List<Invoker<T>> newInvokersList = route(invokersList, null);
+        // 添加 `newInvokersList` 到 `newMethodInvokerMap` 中，表示该服务提供者的全量 Invoker 集合
         newMethodInvokerMap.put(Constants.ANY_VALUE, newInvokersList);
+        // 循环，基于每个方法路由，匹配合适的 Invoker 集合
         if (serviceMethods != null && serviceMethods.length > 0) {
             for (String method : serviceMethods) {
                 List<Invoker<T>> methodInvokers = newMethodInvokerMap.get(method);
@@ -604,6 +613,7 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                 newMethodInvokerMap.put(method, route(methodInvokers, method));
             }
         }
+        // 循环排序每个方法的 Invoker 集合，并设置为不可变
         // sort and unmodifiable
         for (String method : new HashSet<String>(newMethodInvokerMap.keySet())) {
             List<Invoker<T>> methodInvokers = newMethodInvokerMap.get(method);
