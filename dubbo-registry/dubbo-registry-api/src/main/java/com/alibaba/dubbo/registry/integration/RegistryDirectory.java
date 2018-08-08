@@ -655,15 +655,19 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
      * @param newUrlInvokerMap
      */
     private void destroyUnusedInvokers(Map<String, Invoker<T>> oldUrlInvokerMap, Map<String, Invoker<T>> newUrlInvokerMap) {
+        // 防御性编程，目前不存在这个情况
         if (newUrlInvokerMap == null || newUrlInvokerMap.size() == 0) {
+            // 销毁所有服务提供者 Invoker
             destroyAllInvokers();
             return;
         }
         // check deleted invoker
+        // 对比新老集合，计算需要销毁的 Invoker 集合
         List<String> deleted = null;
         if (oldUrlInvokerMap != null) {
             Collection<Invoker<T>> newInvokers = newUrlInvokerMap.values();
             for (Map.Entry<String, Invoker<T>> entry : oldUrlInvokerMap.entrySet()) {
+                // 若不存在，添加到 `deleted` 中
                 if (!newInvokers.contains(entry.getValue())) {
                     if (deleted == null) {
                         deleted = new ArrayList<String>();
@@ -672,13 +676,15 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
                 }
             }
         }
-
+        // 若有需要销毁的 Invoker ，则进行销毁
         if (deleted != null) {
             for (String url : deleted) {
                 if (url != null) {
+                    // 移除出 `urlInvokerMap`
                     Invoker<T> invoker = oldUrlInvokerMap.remove(url);
                     if (invoker != null) {
                         try {
+                            // 销毁 Invoker
                             invoker.destroy();
                             if (logger.isDebugEnabled()) {
                                 logger.debug("destory invoker[" + invoker.getUrl() + "] success. ");
