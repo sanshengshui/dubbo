@@ -712,19 +712,25 @@ public class RegistryDirectory<T> extends AbstractDirectory<T> implements Notify
         }
         List<Invoker<T>> invokers = null;
         Map<String, List<Invoker<T>>> localMethodInvokerMap = this.methodInvokerMap; // local reference
+        // 获得 Invoker 集合
         if (localMethodInvokerMap != null && localMethodInvokerMap.size() > 0) {
+            // 获得方法名、方法参数
             String methodName = RpcUtils.getMethodName(invocation);
             Object[] args = RpcUtils.getArguments(invocation);
+            // 【第一】可根据第一个参数枚举路由
             if (args != null && args.length > 0 && args[0] != null
                     && (args[0] instanceof String || args[0].getClass().isEnum())) {
                 invokers = localMethodInvokerMap.get(methodName + "." + args[0]); // The routing can be enumerated according to the first parameter
             }
+            // 【第二】根据方法名获得 Invoker 集合
             if (invokers == null) {
                 invokers = localMethodInvokerMap.get(methodName);
             }
+            // 【第三】使用全量 Invoker 集合。例如，`#$echo(name)` ，回声方法
             if (invokers == null) {
                 invokers = localMethodInvokerMap.get(Constants.ANY_VALUE);
             }
+            // 【第四】使用 `methodInvokerMap` 第一个 Invoker 集合。防御性编程。
             if (invokers == null) {
                 Iterator<List<Invoker<T>>> iterator = localMethodInvokerMap.values().iterator();
                 if (iterator.hasNext()) {
