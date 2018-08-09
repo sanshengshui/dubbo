@@ -75,6 +75,7 @@ public class RoundRobinLoadBalance extends AbstractLoadBalance {
                         return k;
                     }
                     if (v.getValue() > 0) {
+                        //基于mod,来说之前选过的，权重-1.mod--
                         v.decrement();
                         mod--;
                     }
