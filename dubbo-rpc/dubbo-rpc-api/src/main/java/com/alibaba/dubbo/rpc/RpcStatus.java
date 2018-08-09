@@ -34,10 +34,13 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class RpcStatus {
 
+    //私有静态map,存调用统计信息用的
     private static final ConcurrentMap<String, RpcStatus> SERVICE_STATISTICS = new ConcurrentHashMap<String, RpcStatus>();
 
     private static final ConcurrentMap<String, ConcurrentMap<String, RpcStatus>> METHOD_STATISTICS = new ConcurrentHashMap<String, ConcurrentMap<String, RpcStatus>>();
+    //具体代表各个调用指标统计值
     private final ConcurrentMap<String, Object> values = new ConcurrentHashMap<String, Object>();
+    //活跃数
     private final AtomicInteger active = new AtomicInteger();
     private final AtomicLong total = new AtomicLong();
     private final AtomicInteger failed = new AtomicInteger();
