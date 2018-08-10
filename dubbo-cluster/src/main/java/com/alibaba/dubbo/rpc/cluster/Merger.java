@@ -18,9 +18,17 @@ package com.alibaba.dubbo.rpc.cluster;
 
 import com.alibaba.dubbo.common.extension.SPI;
 
+/**
+ * Merger接口，提供接口方法，将对象数组合并为一个对象。
+ * @param <T>
+ */
 @SPI
 public interface Merger<T> {
-
+    /**
+     * 合并T数组，返回合并后的T对象
+     * @param items T 数组
+     * @return T对象
+     */
     T merge(T... items);
 
 }
