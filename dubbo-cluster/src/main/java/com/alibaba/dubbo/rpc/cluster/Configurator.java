@@ -20,7 +20,7 @@ import com.alibaba.dubbo.common.URL;
 
 /**
  * Configurator. (SPI, Prototype, ThreadSafe)
- *
+ * Configurator 工厂接口
  */
 public interface Configurator extends Comparable<Configurator> {
 
