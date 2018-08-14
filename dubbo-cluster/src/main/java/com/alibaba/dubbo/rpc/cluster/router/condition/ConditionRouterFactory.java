@@ -22,7 +22,7 @@ import com.alibaba.dubbo.rpc.cluster.RouterFactory;
 
 /**
  * ConditionRouterFactory
- *
+ * 实现RouterFactory接口，ConditionRouter工厂实现类
  */
 public class ConditionRouterFactory implements RouterFactory {
 
