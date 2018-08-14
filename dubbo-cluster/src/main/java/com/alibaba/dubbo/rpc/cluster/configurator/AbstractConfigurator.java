@@ -61,12 +61,17 @@ public abstract class AbstractConfigurator implements Configurator {
             if (url.getPort() == configuratorUrl.getPort()) {
                 return configureIfMatch(url.getHost(), url);
             }
+            //配置规则,URL没有端口，override输入消费端地址，或者0.0.0.0
         } else {// override url don't have a port, means the ip override url specify is a consumer address or 0.0.0.0
             // 1.If it is a consumer ip address, the intention is to control a specific consumer instance, it must takes effect at the consumer side, any provider received this override url should ignore;
             // 2.If the ip is 0.0.0.0, this override url can be used on consumer, and also can be used on provider
+            // 1. 如果是消费端地址，则意图是控制消费者机器，必定在消费端生效，提供端忽略。
+            // 2. 如果是0.0.0.0可能是控制提供端，也可能是控制提供端
             if (url.getParameter(Constants.SIDE_KEY, Constants.PROVIDER).equals(Constants.CONSUMER)) {
+                // NetUtils.getLocalHost是消费端注册到zk的消费者地址
                 return configureIfMatch(NetUtils.getLocalHost(), url);// NetUtils.getLocalHost is the ip address consumer registered to registry.
             } else if (url.getParameter(Constants.SIDE_KEY, Constants.CONSUMER).equals(Constants.PROVIDER)) {
+                // 控制所有提供端，地址必定是0.0.0.0，否则就要配端口从而执行上面的if分支了
                 return configureIfMatch(Constants.ANYHOST_VALUE, url);// take effect on all providers, so address must be 0.0.0.0, otherwise it won't flow to this if branch
             }
         }
@@ -74,28 +79,34 @@ public abstract class AbstractConfigurator implements Configurator {
     }
 
     private URL configureIfMatch(String host, URL url) {
+        // 匹配 Host
         if (Constants.ANYHOST_VALUE.equals(configuratorUrl.getHost()) || host.equals(configuratorUrl.getHost())) {
+            // 匹配 "application"
             String configApplication = configuratorUrl.getParameter(Constants.APPLICATION_KEY,
                     configuratorUrl.getUsername());
             String currentApplication = url.getParameter(Constants.APPLICATION_KEY, url.getUsername());
             if (configApplication == null || Constants.ANY_VALUE.equals(configApplication)
                     || configApplication.equals(currentApplication)) {
+                // 配置 URL 中的条件 KEYS 集合。其中下面四个 KEY ，不算是条件，而是内置属性。考虑到下面要移除，所以添加到该集合中。
                 Set<String> condtionKeys = new HashSet<String>();
                 condtionKeys.add(Constants.CATEGORY_KEY);
                 condtionKeys.add(Constants.CHECK_KEY);
                 condtionKeys.add(Constants.DYNAMIC_KEY);
                 condtionKeys.add(Constants.ENABLED_KEY);
+                // 判断传入的 url 是否匹配配置规则 URL 的条件。除了 "application" 和 "side" 之外，带有 `"~"` 开头的 KEY ，也是条件。
                 for (Map.Entry<String, String> entry : configuratorUrl.getParameters().entrySet()) {
                     String key = entry.getKey();
                     String value = entry.getValue();
                     if (key.startsWith("~") || Constants.APPLICATION_KEY.equals(key) || Constants.SIDE_KEY.equals(key)) {
                         condtionKeys.add(key);
+                        // 若不相等，则不匹配配置规则，直接返回
                         if (value != null && !Constants.ANY_VALUE.equals(value)
                                 && !value.equals(url.getParameter(key.startsWith("~") ? key.substring(1) : key))) {
                             return url;
                         }
                     }
                 }
+                // 移除条件 KEYS 集合，并配置到 URL 中
                 return doConfigure(url, configuratorUrl.removeParameters(condtionKeys));
             }
         }
