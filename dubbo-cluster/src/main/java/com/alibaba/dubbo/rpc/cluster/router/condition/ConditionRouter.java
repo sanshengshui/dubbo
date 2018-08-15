@@ -59,8 +59,17 @@ public class ConditionRouter implements Router, Comparable<Router> {
      * 路由规则的优先级，用于排序，优先级越大越靠前执行，可不填，缺省为0.
      */
     private final int priority;
+    /**
+     * 当路由结果为空时，是否强制执行，如果不强制执行，路由结果为空的路由规则将自动失效，可不填，缺省为 false 。
+     */
     private final boolean force;
+    /**
+     * 消费者匹配条件集合，通过解析【条件表达式 rule 的 `=>` 之前半部分】
+     */
     private final Map<String, MatchPair> whenCondition;
+    /**
+     * 提供者地址列表的过滤条件，通过解析【条件表达式 rule 的 `=>` 之后半部分】
+     */
     private final Map<String, MatchPair> thenCondition;
 
     public ConditionRouter(URL url) {
@@ -68,6 +77,7 @@ public class ConditionRouter implements Router, Comparable<Router> {
         this.priority = url.getParameter(Constants.PRIORITY_KEY, 0);
         this.force = url.getParameter(Constants.FORCE_KEY, false);
         try {
+            // 拆分条件变大时为 when 和 then 两部分
             String rule = url.getParameterAndDecoded(Constants.RULE_KEY);
             if (rule == null || rule.trim().length() == 0) {
                 throw new IllegalArgumentException("Illegal route rule!");
@@ -76,7 +86,9 @@ public class ConditionRouter implements Router, Comparable<Router> {
             int i = rule.indexOf("=>");
             String whenRule = i < 0 ? null : rule.substring(0, i).trim();
             String thenRule = i < 0 ? rule.trim() : rule.substring(i + 2).trim();
+            // 解析 `whenCondition`
             Map<String, MatchPair> when = StringUtils.isBlank(whenRule) || "true".equals(whenRule) ? new HashMap<String, MatchPair>() : parseRule(whenRule);
+            // 解析 `thenCondition`
             Map<String, MatchPair> then = StringUtils.isBlank(thenRule) || "false".equals(thenRule) ? null : parseRule(thenRule);
             // NOTE: It should be determined on the business level whether the `When condition` can be empty or not.
             this.whenCondition = when;
