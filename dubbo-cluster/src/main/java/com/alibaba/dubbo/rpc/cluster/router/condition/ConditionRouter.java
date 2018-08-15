@@ -253,28 +253,44 @@ public class ConditionRouter implements Router, Comparable<Router> {
     }
 
     private static final class MatchPair {
+        /**
+         * 匹配的值集合
+         */
         final Set<String> matches = new HashSet<String>();
+        /**
+         * 不匹配的值集合
+         */
         final Set<String> mismatches = new HashSet<String>();
 
+        /**
+         * 判断 value 是否匹配 matches + mismatches
+         *
+         * @param value 值
+         * @param param URL
+         * @return 是否匹配
+         */
         private boolean isMatch(String value, URL param) {
+            // 只匹配 matches
             if (!matches.isEmpty() && mismatches.isEmpty()) {
                 for (String match : matches) {
                     if (UrlUtils.isMatchGlobPattern(match, value, param)) {
                         return true;
                     }
                 }
-                return false;
+                return false;// 如果没匹配上，认为为 false ，即不匹配
             }
 
+            // 只匹配 mismatches
             if (!mismatches.isEmpty() && matches.isEmpty()) {
                 for (String mismatch : mismatches) {
                     if (UrlUtils.isMatchGlobPattern(mismatch, value, param)) {
                         return false;
                     }
                 }
-                return true;
+                return true;// 注意，这里和上面不同。原因，你懂的。
             }
 
+            // 匹配 mismatches + matches
             if (!matches.isEmpty() && !mismatches.isEmpty()) {
                 //when both mismatches and matches contain the same value, then using mismatches first
                 for (String mismatch : mismatches) {
@@ -287,7 +303,7 @@ public class ConditionRouter implements Router, Comparable<Router> {
                         return true;
                     }
                 }
-                return false;
+                return false; // 如果没匹配上，认为为 false ，即不匹配
             }
             return false;
         }
