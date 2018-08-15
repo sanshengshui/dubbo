@@ -45,8 +45,19 @@ import java.util.regex.Pattern;
 public class ConditionRouter implements Router, Comparable<Router> {
 
     private static final Logger logger = LoggerFactory.getLogger(ConditionRouter.class);
+    /**
+     * 分组正则匹配，详细见{@link #parseRule(String)}方法
+     * 前 []为匹配，分隔符
+     * 后 []为匹配，内容
+     */
     private static Pattern ROUTE_PATTERN = Pattern.compile("([&!=,]*)\\s*([^&!=,\\s]+)");
+    /**
+     * 路由规则URL
+     */
     private final URL url;
+    /**
+     * 路由规则的优先级，用于排序，优先级越大越靠前执行，可不填，缺省为0.
+     */
     private final int priority;
     private final boolean force;
     private final Map<String, MatchPair> whenCondition;
