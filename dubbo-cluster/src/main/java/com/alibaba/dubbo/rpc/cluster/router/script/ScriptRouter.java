@@ -45,13 +45,23 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ScriptRouter implements Router {
 
     private static final Logger logger = LoggerFactory.getLogger(ScriptRouter.class);
-
+    /**
+     * 脚本类型 与 ScriptEngine的映射缓存
+     */
     private static final Map<String, ScriptEngine> engines = new ConcurrentHashMap<String, ScriptEngine>();
 
+    /**
+     * 路由规则URL
+     */
     private final ScriptEngine engine;
-
+    /**
+     * 路由规则的优先级，用于排序，优先级越大越靠前执行，可不填，缺省为 0 .
+     */
     private final int priority;
 
+    /**
+     * 路由规则 URL
+     */
     private final String rule;
 
     private final URL url;
@@ -61,6 +71,7 @@ public class ScriptRouter implements Router {
         String type = url.getParameter(Constants.TYPE_KEY);
         this.priority = url.getParameter(Constants.PRIORITY_KEY, 0);
         String rule = url.getParameterAndDecoded(Constants.RULE_KEY);
+        // 初始化 `engine`
         if (type == null || type.length() == 0) {
             type = Constants.DEFAULT_SCRIPT_TYPE_KEY;
         }
@@ -68,7 +79,7 @@ public class ScriptRouter implements Router {
             throw new IllegalStateException(new IllegalStateException("route rule can not be empty. rule:" + rule));
         }
         ScriptEngine engine = engines.get(type);
-        if (engine == null) {
+        if (engine == null) {// 在缓存中不存在，则进行创建 ScriptEngine 对象
             engine = new ScriptEngineManager().getEngineByName(type);
             if (engine == null) {
                 throw new IllegalStateException(new IllegalStateException("Unsupported route rule type: " + type + ", rule: " + rule));
