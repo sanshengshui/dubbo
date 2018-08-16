@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ScriptRouter
- *
+ * 实现Router接口，基于脚本的Router实现类
  */
 public class ScriptRouter implements Router {
 
