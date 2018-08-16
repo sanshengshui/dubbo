@@ -99,14 +99,16 @@ public class ScriptRouter implements Router {
     @SuppressWarnings("unchecked")
     public <T> List<Invoker<T>> route(List<Invoker<T>> invokers, URL url, Invocation invocation) throws RpcException {
         try {
+            //执行脚本
             List<Invoker<T>> invokersCopy = new ArrayList<Invoker<T>>(invokers);
             Compilable compilable = (Compilable) engine;
             Bindings bindings = engine.createBindings();
             bindings.put("invokers", invokersCopy);
             bindings.put("invocation", invocation);
             bindings.put("context", RpcContext.getContext());
-            CompiledScript function = compilable.compile(rule);
-            Object obj = function.eval(bindings);
+            CompiledScript function = compilable.compile(rule);//编译
+            Object obj = function.eval(bindings);//执行
+            // 根据结果类型，转换成 (List<Invoker<T>> 类型返回
             if (obj instanceof Invoker[]) {
                 invokersCopy = Arrays.asList((Invoker<T>[]) obj);
             } else if (obj instanceof Object[]) {
@@ -120,6 +122,7 @@ public class ScriptRouter implements Router {
             return invokersCopy;
         } catch (ScriptException e) {
             //fail then ignore rule .invokers.
+            // 发生异常，忽略路由规则，返回全 `invokers` 集合
             logger.error("route error , rule has been ignored. rule: " + rule + ", method:" + invocation.getMethodName() + ", url: " + RpcContext.getContext().getUrl(), e);
             return invokers;
         }
