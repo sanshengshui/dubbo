@@ -108,14 +108,18 @@ public class MockClusterInvoker<T> implements Invoker<T> {
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Result doMockInvoke(Invocation invocation, RpcException e) {
         Result result = null;
+        //第一步,获得Mock Invoker对象
         Invoker<T> minvoker;
-
+        // 路由匹配 Mock Invoker集合
         List<Invoker<T>> mockInvokers = selectMockInvoker(invocation);
+        //如果不存在,创建MockInvoker对象
         if (mockInvokers == null || mockInvokers.isEmpty()) {
             minvoker = (Invoker<T>) new MockInvoker(directory.getUrl());
+            //如果存在,选择第一个
         } else {
             minvoker = mockInvokers.get(0);
         }
+        // 第二步,调用,执行本地Mock逻辑
         try {
             result = minvoker.invoke(invocation);
         } catch (RpcException me) {
