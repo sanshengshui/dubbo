@@ -68,28 +68,36 @@ public class MockClusterInvoker<T> implements Invoker<T> {
     @Override
     public Result invoke(Invocation invocation) throws RpcException {
         Result result = null;
-
+        //获得"mock"配置项,有多种配置方式
         String value = directory.getUrl().getMethodParameter(invocation.getMethodName(), Constants.MOCK_KEY, Boolean.FALSE.toString()).trim();
+        //[第一种] 无mock
         if (value.length() == 0 || value.equalsIgnoreCase("false")) {
             //no mock
+            //调用原Invoker,发起RPC调用
             result = this.invoker.invoke(invocation);
+            //[第二种] 强制服务降级 https://dubbo.gitbooks.io/dubbo-user-book/demos/service-downgrade.html
         } else if (value.startsWith("force")) {
             if (logger.isWarnEnabled()) {
                 logger.info("force-mock: " + invocation.getMethodName() + " force-mock enabled , url : " + directory.getUrl());
             }
             //force:direct mock
+            //直接调用 Mock Invoker,执行本地Mock逻辑
             result = doMockInvoke(invocation, null);
+            //第三种 失败服务降级 https://dubbo.gitbooks.io/dubbo-user-book/demos/service-downgrade.html
         } else {
             //fail-mock
             try {
+                //调用原Invoker,发起RPC调用
                 result = this.invoker.invoke(invocation);
             } catch (RpcException e) {
+                //业务性异常,直接抛出
                 if (e.isBiz()) {
                     throw e;
                 } else {
                     if (logger.isWarnEnabled()) {
                         logger.warn("fail-mock: " + invocation.getMethodName() + " fail-mock enabled , url : " + directory.getUrl(), e);
                     }
+                    // 失败后，调用 Mock Invoker ，执行本地 Mock 逻辑
                     result = doMockInvoke(invocation, e);
                 }
             }
