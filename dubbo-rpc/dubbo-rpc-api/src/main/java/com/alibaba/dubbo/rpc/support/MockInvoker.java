@@ -39,10 +39,21 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 final public class MockInvoker<T> implements Invoker<T> {
+    /**
+     * ProxyFactory$Adaptive对象
+     */
     private final static ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
+    /**
+     * mock与Invoker对象的映射缓存
+     */
     private final static Map<String, Invoker<?>> mocks = new ConcurrentHashMap<String, Invoker<?>>();
+    /**
+     * mock与Throwable对象的映射缓存
+     */
     private final static Map<String, Throwable> throwables = new ConcurrentHashMap<String, Throwable>();
-
+    /**
+     * URL对象
+     */
     private final URL url;
 
     public MockInvoker(URL url) {
@@ -85,6 +96,7 @@ final public class MockInvoker<T> implements Invoker<T> {
 
     @Override
     public Result invoke(Invocation invocation) throws RpcException {
+        //获得"mock"配置项，方法级 > 类级
         String mock = getUrl().getParameter(invocation.getMethodName() + "." + Constants.MOCK_KEY);
         if (invocation instanceof RpcInvocation) {
             ((RpcInvocation) invocation).setInvoker(this);
@@ -93,36 +105,48 @@ final public class MockInvoker<T> implements Invoker<T> {
             mock = getUrl().getParameter(Constants.MOCK_KEY);
         }
 
-        if (StringUtils.isBlank(mock)) {
+        if (StringUtils.isBlank(mock)) {//不允许为空
             throw new RpcException(new IllegalAccessException("mock can not be null. url :" + url));
         }
+        //标准化"mock"配置项
         mock = normallizeMock(URL.decode(mock));
+        //等于"return",返回值为空的RpcResult对象
         if (Constants.RETURN_PREFIX.trim().equalsIgnoreCase(mock.trim())) {
             RpcResult result = new RpcResult();
             result.setValue(null);
             return result;
+            // 以 "return " 开头，返回对应值的 RpcResult 对象
         } else if (mock.startsWith(Constants.RETURN_PREFIX)) {
             mock = mock.substring(Constants.RETURN_PREFIX.length()).trim();
             mock = mock.replace('`', '"');
             try {
+                // 解析返回类型
                 Type[] returnTypes = RpcUtils.getReturnTypes(invocation);
+                // 解析返回值
                 Object value = parseMockValue(mock, returnTypes);
+                // 创建对应值的 RpcResult 对象，并返回
                 return new RpcResult(value);
             } catch (Exception ew) {
                 throw new RpcException("mock return invoke error. method :" + invocation.getMethodName() + ", mock:" + mock + ", url: " + url, ew);
             }
+            // 以 "throw" 开头，抛出 RpcException 异常
         } else if (mock.startsWith(Constants.THROW_PREFIX)) {
             mock = mock.substring(Constants.THROW_PREFIX.length()).trim();
             mock = mock.replace('`', '"');
-            if (StringUtils.isBlank(mock)) {
+            if (StringUtils.isBlank(mock)) {// 禁止为空
                 throw new RpcException(" mocked exception for Service degradation. ");
             } else { // user customized class
+                // 创建自定义异常
                 Throwable t = getThrowable(mock);
+                // 抛出业务类型的 RpcException 异常
                 throw new RpcException(RpcException.BIZ_EXCEPTION, t);
             }
+            // 自定义 Mock 类，执行自定义逻辑
         } else { //impl mock
             try {
+                // 创建 Invoker 对象
                 Invoker<T> invoker = getInvoker(mock);
+                // 执行 Invoker 对象的调用逻辑
                 return invoker.invoke(invocation);
             } catch (Throwable t) {
                 throw new RpcException("Failed to create mock implemention class " + mock, t);
