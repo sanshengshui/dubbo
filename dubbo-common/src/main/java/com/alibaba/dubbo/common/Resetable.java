@@ -18,6 +18,7 @@ package com.alibaba.dubbo.common;
 
 /**
  * Resetable.
+ * 可重置接口。
  */
 public interface Resetable {
 
