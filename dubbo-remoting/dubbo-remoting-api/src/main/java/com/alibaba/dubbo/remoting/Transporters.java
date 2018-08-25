@@ -47,12 +47,14 @@ public class Transporters {
         if (handlers == null || handlers.length == 0) {
             throw new IllegalArgumentException("handlers == null");
         }
+        //创建handler
         ChannelHandler handler;
         if (handlers.length == 1) {
             handler = handlers[0];
         } else {
             handler = new ChannelHandlerDispatcher(handlers);
         }
+        //创建Server对象
         return getTransporter().bind(url, handler);
     }
 
