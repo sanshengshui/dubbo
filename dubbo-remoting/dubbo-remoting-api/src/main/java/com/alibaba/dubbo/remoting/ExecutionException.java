@@ -26,7 +26,9 @@ import java.net.InetSocketAddress;
 public class ExecutionException extends RemotingException {
 
     private static final long serialVersionUID = -2531085236111056860L;
-
+    /**
+     * 请求
+     */
     private final Object request;
 
     public ExecutionException(Object request, Channel channel, String message, Throwable cause) {
