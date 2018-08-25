@@ -36,24 +36,31 @@ public class MockInvokersSelector implements Router {
     @Override
     public <T> List<Invoker<T>> route(final List<Invoker<T>> invokers,
                                       URL url, final Invocation invocation) throws RpcException {
+        //获得普通Invoker集合
         if (invocation.getAttachments() == null) {
             return getNormalInvokers(invokers);
         } else {
+            //获得"invocation.need.mock"配置项
             String value = invocation.getAttachments().get(Constants.INVOCATION_NEED_MOCK);
+            //获得普通Invoker集合
             if (value == null)
                 return getNormalInvokers(invokers);
+            //获得MockInvoker集合
             else if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
                 return getMockedInvokers(invokers);
             }
         }
+        //其他，不匹配，直接返回'invokers'集合
         return invokers;
     }
 
     private <T> List<Invoker<T>> getMockedInvokers(final List<Invoker<T>> invokers) {
+        //不包含MockInvoker的情况下，直接返回null
         if (!hasMockProviders(invokers)) {
             return null;
         }
-        List<Invoker<T>> sInvokers = new ArrayList<Invoker<T>>(1);
+        //过滤掉普通Invoker,创建MockInvoker集合
+        List<Invoker<T>> sInvokers = new ArrayList<Invoker<T>>(1);//一般情况就一个，所以设置了默认数组大小为1.
         for (Invoker<T> invoker : invokers) {
             if (invoker.getUrl().getProtocol().equals(Constants.MOCK_PROTOCOL)) {
                 sInvokers.add(invoker);
@@ -63,9 +70,11 @@ public class MockInvokersSelector implements Router {
     }
 
     private <T> List<Invoker<T>> getNormalInvokers(final List<Invoker<T>> invokers) {
+        //不包含MockInvoker的情况下，直接返回'invokers'
         if (!hasMockProviders(invokers)) {
             return invokers;
         } else {
+            //若包含MockInvoker的情况下，过滤掉MockInvoker,创建普通Invoker集合
             List<Invoker<T>> sInvokers = new ArrayList<Invoker<T>>(invokers.size());
             for (Invoker<T> invoker : invokers) {
                 if (!invoker.getUrl().getProtocol().equals(Constants.MOCK_PROTOCOL)) {
@@ -76,10 +85,17 @@ public class MockInvokersSelector implements Router {
         }
     }
 
+    /**
+     * 通过protocol = "mock"来判断，是否为MockInvoker。所以只要不为MockInvoker,
+     * 就是普通Invoker.关于"mock"协议，我们稍后解析
+     * @param invokers
+     * @param <T>
+     * @return
+     */
     private <T> boolean hasMockProviders(final List<Invoker<T>> invokers) {
         boolean hasMockProvider = false;
         for (Invoker<T> invoker : invokers) {
-            if (invoker.getUrl().getProtocol().equals(Constants.MOCK_PROTOCOL)) {
+            if (invoker.getUrl().getProtocol().equals(Constants.MOCK_PROTOCOL)) {//协议为"mock"
                 hasMockProvider = true;
                 break;
             }

@@ -20,7 +20,7 @@ import java.net.InetSocketAddress;
 
 /**
  * Channel. (API/SPI, Prototype, ThreadSafe)
- *
+ * 继承Endpoint接口，通道接口。方法如下:
  *
  *
  * @see com.alibaba.dubbo.remoting.Client
