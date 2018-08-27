@@ -151,7 +151,9 @@ public abstract class AbstractServer extends AbstractEndpoint implements Server 
 
     @Override
     public void send(Object message, boolean sent) throws RemotingException {
+        //获得所有的客户端的通道
         Collection<Channel> channels = getChannels();
+        //群发消息
         for (Channel channel : channels) {
             if (channel.isConnected()) {
                 channel.send(message, sent);
@@ -209,12 +211,14 @@ public abstract class AbstractServer extends AbstractEndpoint implements Server 
             return;
         }
 
+        //超过上限,关闭新的连接
         Collection<Channel> channels = getChannels();
         if (accepts > 0 && channels.size() > accepts) {
             logger.error("Close channel " + ch + ", cause: The server " + ch.getLocalAddress() + " connections greater than max config " + accepts);
-            ch.close();
+            ch.close();//关闭新的连接
             return;
         }
+        //连接
         super.connected(ch);
     }
 
