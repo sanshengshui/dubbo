@@ -63,8 +63,14 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
      * 发送消息时,若断开,是否重连
      */
     private final boolean send_reconnect;
+    /**
+     * 重连次数
+     */
     private final AtomicInteger reconnect_count = new AtomicInteger(0);
     // Reconnection error log has been called before?
+    /**
+     * 重连时,是否已经打印过错误日志
+     */
     private final AtomicBoolean reconnect_error_log_flag = new AtomicBoolean(false);
     // reconnect warning period. Reconnect warning interval (log warning after how many times) //for test
     /**
@@ -80,8 +86,14 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
      * 在调用{@link #wrapChannelHandler(URL, ChannelHandler)}时,会调用{@link}
      */
     protected volatile ExecutorService executor;
+    /**
+     * 重连执行任务 Future
+     */
     private volatile ScheduledFuture<?> reconnectExecutorFuture = null;
     // the last successed connected time
+    /**
+     * 最后成功连接时间
+     */
     private long lastConnectedTime = System.currentTimeMillis();
 
 
@@ -168,18 +180,24 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
      */
     private synchronized void initConnectStatusCheckCommand() {
         //reconnect=false to close reconnect
+        //获得重连频率,默认开启
         int reconnect = getReconnectParam(getUrl());
+        //若开启重连功能,创建重连线程
         if (reconnect > 0 && (reconnectExecutorFuture == null || reconnectExecutorFuture.isCancelled())) {
+            //若开启重连功能,创建重连线程
             Runnable connectStatusCheckCommand = new Runnable() {
                 @Override
                 public void run() {
                     try {
+                        //未连接,重连
                         if (!isConnected()) {
                             connect();
+                            //已连接,记录最后连接时间
                         } else {
                             lastConnectedTime = System.currentTimeMillis();
                         }
                     } catch (Throwable t) {
+                        //超过一定时间未连接上,才打印异常日志,并且,仅打印一次.默认,15分钟
                         String errorMsg = "client reconnect to " + getUrl().getAddress() + " find error . url: " + getUrl();
                         // wait registry sync provider list
                         if (System.currentTimeMillis() - lastConnectedTime > shutdown_timeout) {
@@ -189,12 +207,14 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
                                 return;
                             }
                         }
+                        //每一定次发现未重连,才打印告警日志.默认,1800次,1小时
                         if (reconnect_count.getAndIncrement() % reconnect_warning_period == 0) {
                             logger.warn(errorMsg, t);
                         }
                     }
                 }
             };
+            //发起定时任务
             reconnectExecutorFuture = reconnectExecutorService.scheduleWithFixedDelay(connectStatusCheckCommand, reconnect, reconnect, TimeUnit.MILLISECONDS);
         }
     }
