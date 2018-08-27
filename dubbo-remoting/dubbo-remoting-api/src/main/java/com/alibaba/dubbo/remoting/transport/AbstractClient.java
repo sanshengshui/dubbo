@@ -55,6 +55,9 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
      * 重连定时任务执行器
      */
     private static final ScheduledThreadPoolExecutor reconnectExecutorService = new ScheduledThreadPoolExecutor(2, new NamedThreadFactory("DubboClientReconnectTimer", true));
+    /**
+     * 连接锁,用于实现发起连接和断开连接互斥,避免并发
+     */
     private final Lock connectLock = new ReentrantLock();
     /**
      * 发送消息时,若断开,是否重连
@@ -285,17 +288,23 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
     }
 
     protected void connect() throws RemotingException {
+        //获得锁
         connectLock.lock();
         try {
+            //已连接
             if (isConnected()) {
                 return;
             }
+            //初始化重连线程
             initConnectStatusCheckCommand();
+            //执行连接
             doConnect();
+            //连接失败,抛出异常
             if (!isConnected()) {
                 throw new RemotingException(this, "Failed connect to server " + getRemoteAddress() + " from " + getClass().getSimpleName() + " "
                         + NetUtils.getLocalHost() + " using dubbo version " + Version.getVersion()
                         + ", cause: Connect wait timeout: " + getTimeout() + "ms.");
+                //连接成功,打印日志
             } else {
                 if (logger.isInfoEnabled()) {
                     logger.info("Successed connect to server " + getRemoteAddress() + " from " + getClass().getSimpleName() + " "
@@ -303,7 +312,9 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
                             + ", channel is " + this.getChannel());
                 }
             }
+            //设置重连次数归零
             reconnect_count.set(0);
+            //设置未打印过错误日志
             reconnect_error_log_flag.set(false);
         } catch (RemotingException e) {
             throw e;
@@ -312,6 +323,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
                     + NetUtils.getLocalHost() + " using dubbo version " + Version.getVersion()
                     + ", cause: " + e.getMessage(), e);
         } finally {
+            //释放锁
             connectLock.unlock();
         }
     }
