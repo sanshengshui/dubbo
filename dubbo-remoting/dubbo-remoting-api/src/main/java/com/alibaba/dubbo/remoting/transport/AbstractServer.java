@@ -41,24 +41,43 @@ public abstract class AbstractServer extends AbstractEndpoint implements Server 
 
     protected static final String SERVER_THREAD_POOL_NAME = "DubboServerHandler";
     private static final Logger logger = LoggerFactory.getLogger(AbstractServer.class);
+    /**
+     * 线程池
+     */
     ExecutorService executor;
+    /**
+     * 服务地址
+     */
     private InetSocketAddress localAddress;
+    /**
+     * 绑定地址
+     */
     private InetSocketAddress bindAddress;
+    /**
+     * 服务器最大可接受连接数
+     */
     private int accepts;
+    /**
+     * 空闲超时时间,单位:毫秒
+     */
     private int idleTimeout = 600; //600 seconds
 
     public AbstractServer(URL url, ChannelHandler handler) throws RemotingException {
         super(url, handler);
+        //服务地址
         localAddress = getUrl().toInetSocketAddress();
-
+        //绑定地址
         String bindIp = getUrl().getParameter(Constants.BIND_IP_KEY, getUrl().getHost());
         int bindPort = getUrl().getParameter(Constants.BIND_PORT_KEY, getUrl().getPort());
         if (url.getParameter(Constants.ANYHOST_KEY, false) || NetUtils.isInvalidLocalHost(bindIp)) {
             bindIp = NetUtils.ANYHOST;
         }
         bindAddress = new InetSocketAddress(bindIp, bindPort);
+        //服务器最大可接受连接数
         this.accepts = url.getParameter(Constants.ACCEPTS_KEY, Constants.DEFAULT_ACCEPTS);
+        //空闲超时时间
         this.idleTimeout = url.getParameter(Constants.IDLE_TIMEOUT_KEY, Constants.DEFAULT_IDLE_TIMEOUT);
+        //开启服务器
         try {
             doOpen();
             if (logger.isInfoEnabled()) {
@@ -69,6 +88,7 @@ public abstract class AbstractServer extends AbstractEndpoint implements Server 
                     + " on " + getLocalAddress() + ", cause: " + t.getMessage(), t);
         }
         //fixme replace this with better method
+        //获得线程池
         DataStore dataStore = ExtensionLoader.getExtensionLoader(DataStore.class).getDefaultExtension();
         executor = (ExecutorService) dataStore.get(Constants.EXECUTOR_SERVICE_COMPONENT_KEY, Integer.toString(url.getPort()));
     }
