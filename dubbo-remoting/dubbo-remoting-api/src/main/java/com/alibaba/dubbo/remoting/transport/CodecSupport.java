@@ -32,10 +32,20 @@ import java.util.Set;
 public class CodecSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(CodecSupport.class);
+    /**
+     * 序列化对象集合
+     * key:序列化类型编号
+     */
     private static Map<Byte, Serialization> ID_SERIALIZATION_MAP = new HashMap<Byte, Serialization>();
+    /**
+     * 序列化名集合
+     * key: 序列化类型编号
+     * value：序列化拓展名
+     */
     private static Map<Byte, String> ID_SERIALIZATIONNAME_MAP = new HashMap<Byte, String>();
 
     static {
+        //基于Dubbo SPI,初始化
         Set<String> supportedExtensions = ExtensionLoader.getExtensionLoader(Serialization.class).getSupportedExtensions();
         for (String name : supportedExtensions) {
             Serialization serialization = ExtensionLoader.getExtensionLoader(Serialization.class).getExtension(name);
@@ -67,6 +77,7 @@ public class CodecSupport {
     public static Serialization getSerialization(URL url, Byte id) throws IOException {
         Serialization serialization = getSerializationById(id);
         String serializationName = url.getParameter(Constants.SERIALIZATION_KEY, Constants.DEFAULT_REMOTING_SERIALIZATION);
+        //出于安全的目的，针对JDK的序列化方式(对应编号为 3、4、7)，检查连接到服务器的 URL 和实际传输的数据，协议是否一致。
         // Check if "serialization id" passed from network matches the id on this side(only take effect for JDK serialization), for security purpose.
         if (serialization == null
                 || ((id == 3 || id == 7 || id == 4) && !(serializationName.equals(ID_SERIALIZATIONNAME_MAP.get(id))))) {
