@@ -43,14 +43,31 @@ import java.util.concurrent.TimeUnit;
 public class HeaderExchangeClient implements ExchangeClient {
 
     private static final Logger logger = LoggerFactory.getLogger(HeaderExchangeClient.class);
-
+    /**
+     * 定时器线程池
+     */
     private static final ScheduledThreadPoolExecutor scheduled = new ScheduledThreadPoolExecutor(2, new NamedThreadFactory("dubbo-remoting-client-heartbeat", true));
+    /**
+     * 客户端
+     */
     private final Client client;
+    /**
+     * 信息交换通道
+     */
     private final ExchangeChannel channel;
     // heartbeat timer
+    /**
+     * 心跳定时器
+     */
     private ScheduledFuture<?> heartbeatTimer;
     // heartbeat(ms), default value is 0 , won't execute a heartbeat.
+    /**
+     * 是否心跳
+     */
     private int heartbeat;
+    /**
+     * 心跳间隔，单位:毫秒
+     */
     private int heartbeatTimeout;
 
     public HeaderExchangeClient(Client client, boolean needHeartbeat) {
@@ -58,13 +75,16 @@ public class HeaderExchangeClient implements ExchangeClient {
             throw new IllegalArgumentException("client == null");
         }
         this.client = client;
+        //创建HeaderExchangeChannel对象
         this.channel = new HeaderExchangeChannel(client);
+        //读取心跳相关配置
         String dubbo = client.getUrl().getParameter(Constants.DUBBO_VERSION_KEY);
         this.heartbeat = client.getUrl().getParameter(Constants.HEARTBEAT_KEY, dubbo != null && dubbo.startsWith("1.0.") ? Constants.DEFAULT_HEARTBEAT : 0);
         this.heartbeatTimeout = client.getUrl().getParameter(Constants.HEARTBEAT_TIMEOUT_KEY, heartbeat * 3);
-        if (heartbeatTimeout < heartbeat * 2) {
+        if (heartbeatTimeout < heartbeat * 2) {//避免间隔太短
             throw new IllegalStateException("heartbeatTimeout < heartbeatInterval * 2");
         }
+        //发起心跳定时器
         if (needHeartbeat) {
             startHeartbeatTimer();
         }
@@ -181,7 +201,9 @@ public class HeaderExchangeClient implements ExchangeClient {
     }
 
     private void startHeartbeatTimer() {
+        //停止原有定时任务
         stopHeartbeatTimer();
+        //发起新的定时任务
         if (heartbeat > 0) {
             heartbeatTimer = scheduled.scheduleWithFixedDelay(
                     new HeartBeatTask(new HeartBeatTask.ChannelProvider() {
