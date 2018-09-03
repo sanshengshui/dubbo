@@ -42,9 +42,15 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DefaultFuture implements ResponseFuture {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultFuture.class);
-
+    /**
+     * 通道集合
+     * key:请求编号
+     */
     private static final Map<Long, Channel> CHANNELS = new ConcurrentHashMap<Long, Channel>();
-
+    /**
+     * Future 集合
+     * key:请求编号
+     */
     private static final Map<Long, DefaultFuture> FUTURES = new ConcurrentHashMap<Long, DefaultFuture>();
 
     static {
@@ -54,15 +60,42 @@ public class DefaultFuture implements ResponseFuture {
     }
 
     // invoke id.
+    /**
+     * 请求编号
+     */
     private final long id;
+    /**
+     * 通道
+     */
     private final Channel channel;
+    /**
+     * 请求
+     */
     private final Request request;
+    /**
+     * 超时
+     */
     private final int timeout;
+
     private final Lock lock = new ReentrantLock();
+
     private final Condition done = lock.newCondition();
+
+    /**
+     * 创建开始时间
+     */
     private final long start = System.currentTimeMillis();
+    /**
+     * 发送请求时间
+     */
     private volatile long sent;
+    /**
+     * 响应
+     */
     private volatile Response response;
+    /**
+     * 回调
+     */
     private volatile ResponseCallback callback;
 
     public DefaultFuture(Channel channel, Request request, int timeout) {
