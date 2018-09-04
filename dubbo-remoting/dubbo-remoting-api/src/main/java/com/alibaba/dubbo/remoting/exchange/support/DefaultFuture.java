@@ -198,20 +198,25 @@ public class DefaultFuture implements ResponseFuture {
 
     @Override
     public void setCallback(ResponseCallback callback) {
+        //已完成，调用回调
         if (isDone()) {
             invokeCallback(callback);
         } else {
             boolean isdone = false;
+            //获得锁
             lock.lock();
             try {
+                //未完成，设置回调
                 if (!isDone()) {
                     this.callback = callback;
                 } else {
                     isdone = true;
                 }
+                //释放锁
             } finally {
                 lock.unlock();
             }
+            //已完成，调用回调
             if (isdone) {
                 invokeCallback(callback);
             }
@@ -223,18 +228,18 @@ public class DefaultFuture implements ResponseFuture {
         if (callbackCopy == null) {
             throw new NullPointerException("callback cannot be null.");
         }
-        c = null;
         Response res = response;
         if (res == null) {
             throw new IllegalStateException("response cannot be null. url:" + channel.getUrl());
         }
-
+        //正常，处理结果
         if (res.getStatus() == Response.OK) {
             try {
                 callbackCopy.done(res.getResult());
             } catch (Exception e) {
                 logger.error("callback invoke error .reasult:" + res.getResult() + ",url:" + channel.getUrl(), e);
             }
+            //超时，处理TimeoutException异常
         } else if (res.getStatus() == Response.CLIENT_TIMEOUT || res.getStatus() == Response.SERVER_TIMEOUT) {
             try {
                 TimeoutException te = new TimeoutException(res.getStatus() == Response.SERVER_TIMEOUT, channel, res.getErrorMessage());
@@ -242,6 +247,7 @@ public class DefaultFuture implements ResponseFuture {
             } catch (Exception e) {
                 logger.error("callback invoke error ,url:" + channel.getUrl(), e);
             }
+            //其他，处理RemotingException异常
         } else {
             try {
                 RuntimeException re = new RuntimeException(res.getErrorMessage());
@@ -337,15 +343,19 @@ public class DefaultFuture implements ResponseFuture {
             while (true) {
                 try {
                     for (DefaultFuture future : FUTURES.values()) {
+                        //已完成，跳过
                         if (future == null || future.isDone()) {
                             continue;
                         }
+                        //超时
                         if (System.currentTimeMillis() - future.getStartTimestamp() > future.getTimeout()) {
+                            //创建超时Response
                             // create exception response.
                             Response timeoutResponse = new Response(future.getId());
                             // set timeout status.
                             timeoutResponse.setStatus(future.isSent() ? Response.SERVER_TIMEOUT : Response.CLIENT_TIMEOUT);
                             timeoutResponse.setErrorMessage(future.getTimeoutMessage(true));
+                            //响应结果
                             // handle response.
                             DefaultFuture.received(future.getChannel(), timeoutResponse);
                         }
