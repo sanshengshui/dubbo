@@ -76,9 +76,13 @@ public class DefaultFuture implements ResponseFuture {
      * 超时
      */
     private final int timeout;
-
+    /**
+     * 锁
+     */
     private final Lock lock = new ReentrantLock();
-
+    /**
+     * 完成Condition
+     */
     private final Condition done = lock.newCondition();
 
     /**
@@ -150,10 +154,12 @@ public class DefaultFuture implements ResponseFuture {
         if (timeout <= 0) {
             timeout = Constants.DEFAULT_TIMEOUT;
         }
+        //若未完成，等待
         if (!isDone()) {
             long start = System.currentTimeMillis();
             lock.lock();
             try {
+                //等待完成或超时
                 while (!isDone()) {
                     done.await(timeout, TimeUnit.MILLISECONDS);
                     if (isDone() || System.currentTimeMillis() - start > timeout) {
@@ -165,10 +171,12 @@ public class DefaultFuture implements ResponseFuture {
             } finally {
                 lock.unlock();
             }
+            //未完成，抛出超时异常TimeoutException
             if (!isDone()) {
                 throw new TimeoutException(sent > 0, channel, getTimeoutMessage(false));
             }
         }
+        //返回响应
         return returnFromResponse();
     }
 
@@ -246,12 +254,15 @@ public class DefaultFuture implements ResponseFuture {
         if (res == null) {
             throw new IllegalStateException("response cannot be null");
         }
+        //正常，返回结果
         if (res.getStatus() == Response.OK) {
             return res.getResult();
         }
+        //超时，抛出TimeoutException异常
         if (res.getStatus() == Response.CLIENT_TIMEOUT || res.getStatus() == Response.SERVER_TIMEOUT) {
             throw new TimeoutException(res.getStatus() == Response.SERVER_TIMEOUT, channel, res.getErrorMessage());
         }
+        //其他，抛出RemotingException异常
         throw new RemotingException(channel, res.getErrorMessage());
     }
 
