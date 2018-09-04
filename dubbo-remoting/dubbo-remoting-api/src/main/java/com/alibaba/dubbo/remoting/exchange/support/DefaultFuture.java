@@ -129,7 +129,9 @@ public class DefaultFuture implements ResponseFuture {
 
     public static void received(Channel channel, Response response) {
         try {
+            //移除FUTURES
             DefaultFuture future = FUTURES.remove(response.getId());
+            //接受结果
             if (future != null) {
                 future.doReceived(response);
             } else {
@@ -139,6 +141,7 @@ public class DefaultFuture implements ResponseFuture {
                         + (channel == null ? "" : ", channel: " + channel.getLocalAddress()
                         + " -> " + channel.getRemoteAddress()));
             }
+            //移除CHANNELS
         } finally {
             CHANNELS.remove(response.getId());
         }
@@ -295,15 +298,20 @@ public class DefaultFuture implements ResponseFuture {
     }
 
     private void doReceived(Response res) {
+        //锁定
         lock.lock();
         try {
+            //设置结果
             response = res;
+            //通知，唤醒等待
             if (done != null) {
                 done.signal();
             }
         } finally {
+            //释放锁定
             lock.unlock();
         }
+        //调用回调
         if (callback != null) {
             invokeCallback(callback);
         }
