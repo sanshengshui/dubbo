@@ -31,8 +31,13 @@ final class HeartBeatTask implements Runnable {
 
     private ChannelProvider channelProvider;
 
+    /**
+     * 心跳间隔,单位:毫秒
+     */
     private int heartbeat;
-
+    /**
+     * 心跳超时时间,单位:毫秒
+     */
     private int heartbeatTimeout;
 
     HeartBeatTask(ChannelProvider provider, int heartbeat, int heartbeatTimeout) {
