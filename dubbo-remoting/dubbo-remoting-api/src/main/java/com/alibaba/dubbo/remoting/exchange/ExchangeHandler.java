@@ -33,6 +33,7 @@ public interface ExchangeHandler extends ChannelHandler, TelnetHandler {
      * @return response
      * @throws RemotingException
      */
+    //回复请求结果
     Object reply(ExchangeChannel channel, Object request) throws RemotingException;
 
 }
