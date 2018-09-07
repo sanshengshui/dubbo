@@ -77,10 +77,11 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
 
     Response handleRequest(ExchangeChannel channel, Request req) throws RemotingException {
         Response res = new Response(req.getId(), req.getVersion());
+        //请求无法解析，返回BAD_REQUEST响应
         if (req.isBroken()) {
             Object data = req.getData();
 
-            String msg;
+            String msg;//请求数据，转成msg
             if (data == null) msg = null;
             else if (data instanceof Throwable) msg = StringUtils.toString((Throwable) data);
             else msg = data.toString();
@@ -89,6 +90,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
 
             return res;
         }
+        //使用ExchangeHandler处理，并返回响应
         // find handler by message class.
         Object msg = req.getData();
         try {
@@ -209,12 +211,13 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
 
     @Override
     public void caught(Channel channel, Throwable exception) throws RemotingException {
+        // 当发生 ExecutionException 异常，返回异常响应( Response )
         if (exception instanceof ExecutionException) {
             ExecutionException e = (ExecutionException) exception;
             Object msg = e.getRequest();
             if (msg instanceof Request) {
                 Request req = (Request) msg;
-                if (req.isTwoWay() && !req.isHeartbeat()) {
+                if (req.isTwoWay() && !req.isHeartbeat()) {// 需要响应，并且非心跳时间
                     Response res = new Response(req.getId(), req.getVersion());
                     res.setStatus(Response.SERVER_ERROR);
                     res.setErrorMessage(StringUtils.toString(e));
@@ -223,10 +226,13 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
                 }
             }
         }
+        // 创建 ExchangeChannel 对象
         ExchangeChannel exchangeChannel = HeaderExchangeChannel.getOrAddChannel(channel);
         try {
+            // 提交给装饰的 `handler`，继续处理
             handler.caught(exchangeChannel, exception);
         } finally {
+            // 移除 ExchangeChannel 对象，若已断开
             HeaderExchangeChannel.removeChannelIfDisconnected(channel);
         }
     }
