@@ -159,38 +159,50 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
 
     @Override
     public void received(Channel channel, Object message) throws RemotingException {
+        //设置最后的读时间
         channel.setAttribute(KEY_READ_TIMESTAMP, System.currentTimeMillis());
+        //创建ExchangeChannel对象
         ExchangeChannel exchangeChannel = HeaderExchangeChannel.getOrAddChannel(channel);
         try {
+            //处理请求(Request)
             if (message instanceof Request) {
                 // handle request.
                 Request request = (Request) message;
+                //处理事件请求
                 if (request.isEvent()) {
                     handlerEvent(channel, request);
                 } else {
+                    //处理普通请求
                     if (request.isTwoWay()) {
                         Response response = handleRequest(exchangeChannel, request);
                         channel.send(response);
+                        //提交给装饰的'handler',继续处理
                     } else {
                         handler.received(exchangeChannel, request.getData());
                     }
                 }
+                //处理响应(Response)
             } else if (message instanceof Response) {
                 handleResponse(channel, (Response) message);
+                //处理String
             } else if (message instanceof String) {
+                //客户端侧，不支持String
                 if (isClientSide(channel)) {
                     Exception e = new Exception("Dubbo client can not supported string message: " + message + " in channel: " + channel + ", url: " + channel.getUrl());
                     logger.error(e.getMessage(), e);
+                    //服务端侧,目前是telnet命令
                 } else {
                     String echo = handler.telnet(channel, (String) message);
                     if (echo != null && echo.length() > 0) {
                         channel.send(echo);
                     }
                 }
+                //提交给装饰的'handler',继续处理
             } else {
                 handler.received(exchangeChannel, message);
             }
         } finally {
+            //移除ExchangeChannel对象，若已断开
             HeaderExchangeChannel.removeChannelIfDisconnected(channel);
         }
     }
