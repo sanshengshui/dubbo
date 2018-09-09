@@ -34,20 +34,20 @@ public interface Exchanger {
 
     /**
      * bind.
-     *
+     * 绑定一个服务器
      * @param url
-     * @param handler
-     * @return message server
+     * @param handler 数据交换处理器
+     * @return message server 服务器
      */
     @Adaptive({Constants.EXCHANGER_KEY})
     ExchangeServer bind(URL url, ExchangeHandler handler) throws RemotingException;
 
     /**
      * connect.
-     *
-     * @param url
-     * @param handler
-     * @return message channel
+     * 连接一个服务器,即创建一个客户端
+     * @param url 服务器地址
+     * @param handler 数据交换处理器
+     * @return message channel 客户端
      */
     @Adaptive({Constants.EXCHANGER_KEY})
     ExchangeClient connect(URL url, ExchangeHandler handler) throws RemotingException;
