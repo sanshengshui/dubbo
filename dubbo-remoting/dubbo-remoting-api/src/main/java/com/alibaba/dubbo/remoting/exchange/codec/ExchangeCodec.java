@@ -80,17 +80,21 @@ public class ExchangeCodec extends TelnetCodec {
 
     @Override
     public Object decode(Channel channel, ChannelBuffer buffer) throws IOException {
+        //读取Header数组
         int readable = buffer.readableBytes();
         byte[] header = new byte[Math.min(readable, HEADER_LENGTH)];
         buffer.readBytes(header);
+        //解码
         return decode(channel, buffer, readable, header);
     }
 
     @Override
     protected Object decode(Channel channel, ChannelBuffer buffer, int readable, byte[] header) throws IOException {
+        //非Dubbo协议,目前是Telnet命令
         // check magic number.
         if (readable > 0 && header[0] != MAGIC_HIGH
                 || readable > 1 && header[1] != MAGIC_LOW) {
+            //将buffer完全复制到'header'数组中.因为，上面的 `#decode(channel, buffer)` 方法，可能未读全
             int length = header.length;
             if (header.length < readable) {
                 header = Bytes.copyOf(header, readable);
@@ -103,28 +107,32 @@ public class ExchangeCodec extends TelnetCodec {
                     break;
                 }
             }
+            // 提交给父类( Telnet ) 处理，目前是 Telnet 命令。
             return super.decode(channel, buffer, readable, header);
         }
+        // Header 长度不够，返回需要更多的输入
         // check length.
         if (readable < HEADER_LENGTH) {
             return DecodeResult.NEED_MORE_INPUT;
         }
-
+        // `[96 - 127]`：Body 的**长度**。通过该长度，读取 Body 。
         // get data length.
         int len = Bytes.bytes2int(header, 12);
         checkPayload(channel, len);
 
+        // 总长度不够，返回需要更多的输入
         int tt = len + HEADER_LENGTH;
         if (readable < tt) {
             return DecodeResult.NEED_MORE_INPUT;
         }
-
+        // 解析 Header + Body
         // limit input stream.
         ChannelBufferInputStream is = new ChannelBufferInputStream(buffer, len);
 
         try {
             return decodeBody(channel, is, header);
         } finally {
+            // skip 未读完的流，并打印错误日志
             if (is.available() > 0) {
                 try {
                     if (logger.isWarnEnabled()) {
