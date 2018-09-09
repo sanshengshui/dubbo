@@ -47,7 +47,9 @@ import java.io.InputStream;
  *
  */
 public class ExchangeCodec extends TelnetCodec {
-
+    /**
+     * HEADER_LENGTH 静态属性,Header总长度,16Bytes = 128Bits.
+     */
     // header length.
     protected static final int HEADER_LENGTH = 16;
     // magic header.
@@ -67,11 +69,11 @@ public class ExchangeCodec extends TelnetCodec {
 
     @Override
     public void encode(Channel channel, ChannelBuffer buffer, Object msg) throws IOException {
-        if (msg instanceof Request) {
+        if (msg instanceof Request) {// 请求
             encodeRequest(channel, buffer, (Request) msg);
-        } else if (msg instanceof Response) {
+        } else if (msg instanceof Response) { // 响应
             encodeResponse(channel, buffer, (Response) msg);
-        } else {
+        } else { //提交给夫类(Telnet)处理,目前是Telent命令的结果.
             super.encode(channel, buffer, msg);
         }
     }
