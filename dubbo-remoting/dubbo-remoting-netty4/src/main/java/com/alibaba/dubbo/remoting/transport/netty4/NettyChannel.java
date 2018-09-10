@@ -67,8 +67,11 @@ final class NettyChannel extends AbstractChannel {
         NettyChannel ret = channelMap.get(ch);
         if (ret == null) {
             NettyChannel nettyChannel = new NettyChannel(ch, url, handler);
+            /**
+             * 连接中
+             */
             if (ch.isActive()) {
-                ret = channelMap.putIfAbsent(ch, nettyChannel);
+                ret = channelMap.putIfAbsent(ch, nettyChannel);//添加到channelMap
             }
             if (ret == null) {
                 ret = nettyChannel;
@@ -78,8 +81,9 @@ final class NettyChannel extends AbstractChannel {
     }
 
     static void removeChannelIfDisconnected(Channel ch) {
+        // 未连接
         if (ch != null && !ch.isActive()) {
-            channelMap.remove(ch);
+            channelMap.remove(ch);//移除channelMap
         }
     }
 
@@ -100,16 +104,24 @@ final class NettyChannel extends AbstractChannel {
 
     @Override
     public void send(Object message, boolean sent) throws RemotingException {
+        /**
+         * 检查连接状态
+         */
         super.send(message, sent);
-
+        /**
+         * 如果没有等待发送成功,默认成功.
+         */
         boolean success = true;
         int timeout = 0;
         try {
+            //发送成功
             ChannelFuture future = channel.writeAndFlush(message);
+            //等待发送成功
             if (sent) {
                 timeout = getUrl().getPositiveParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT);
                 success = future.await(timeout);
             }
+            //若发生异常,抛出
             Throwable cause = future.cause();
             if (cause != null) {
                 throw cause;
@@ -117,7 +129,7 @@ final class NettyChannel extends AbstractChannel {
         } catch (Throwable e) {
             throw new RemotingException(this, "Failed to send message " + message + " to " + getRemoteAddress() + ", cause: " + e.getMessage(), e);
         }
-
+        //发送失败,抛出异常
         if (!success) {
             throw new RemotingException(this, "Failed to send message " + message + " to " + getRemoteAddress()
                     + "in timeout(" + timeout + "ms) limit");
