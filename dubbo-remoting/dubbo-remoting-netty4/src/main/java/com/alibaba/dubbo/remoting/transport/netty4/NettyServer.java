@@ -51,7 +51,9 @@ import java.util.Map;
 public class NettyServer extends AbstractServer implements Server {
 
     private static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
-
+    /**
+     * 通道集合
+     */
     private Map<String, Channel> channels; // <ip:port, channel>
 
     private ServerBootstrap bootstrap;
@@ -67,30 +69,37 @@ public class NettyServer extends AbstractServer implements Server {
 
     @Override
     protected void doOpen() throws Throwable {
+        //实例化ServerBootstrap
         bootstrap = new ServerBootstrap();
-
+        //创建线程组
         bossGroup = new NioEventLoopGroup(1, new DefaultThreadFactory("NettyServerBoss", true));
         workerGroup = new NioEventLoopGroup(getUrl().getPositiveParameter(Constants.IO_THREADS_KEY, Constants.DEFAULT_IO_THREADS),
                 new DefaultThreadFactory("NettyServerWorker", true));
-
+        //创建NettyServerHandler对象
         final NettyServerHandler nettyServerHandler = new NettyServerHandler(getUrl(), this);
+        //设置'channels'属性
         channels = nettyServerHandler.getChannels();
-
+        //设置它的线程
         bootstrap.group(bossGroup, workerGroup)
+                //设置channel类型
                 .channel(NioServerSocketChannel.class)
+                //设置可选项
                 .childOption(ChannelOption.TCP_NODELAY, Boolean.TRUE)
                 .childOption(ChannelOption.SO_REUSEADDR, Boolean.TRUE)
                 .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+                //设置责任链路
                 .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel ch) throws Exception {
+                        //创建NettyCodecAdapter对象
                         NettyCodecAdapter adapter = new NettyCodecAdapter(getCodec(), getUrl(), NettyServer.this);
                         ch.pipeline()//.addLast("logging",new LoggingHandler(LogLevel.INFO))//for debug
-                                .addLast("decoder", adapter.getDecoder())
-                                .addLast("encoder", adapter.getEncoder())
-                                .addLast("handler", nettyServerHandler);
+                                .addLast("decoder", adapter.getDecoder())//解码
+                                .addLast("encoder", adapter.getEncoder())//编码
+                                .addLast("handler", nettyServerHandler);//处理器
                     }
                 });
+        //服务器绑定端口监听
         // bind
         ChannelFuture channelFuture = bootstrap.bind(getBindAddress());
         channelFuture.syncUninterruptibly();
