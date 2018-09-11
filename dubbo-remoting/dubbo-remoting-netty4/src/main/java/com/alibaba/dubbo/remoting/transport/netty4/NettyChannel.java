@@ -138,21 +138,25 @@ final class NettyChannel extends AbstractChannel {
 
     @Override
     public void close() {
+        //标记关闭
         try {
             super.close();
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
         }
+        //移除连接
         try {
             removeChannelIfDisconnected(channel);
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
         }
+        //清空属性attributes
         try {
             attributes.clear();
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
         }
+        //关闭真正的通道channel
         try {
             if (logger.isInfoEnabled()) {
                 logger.info("Close netty channel " + channel);
