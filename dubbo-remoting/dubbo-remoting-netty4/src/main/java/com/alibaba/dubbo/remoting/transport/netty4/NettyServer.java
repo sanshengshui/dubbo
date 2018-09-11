@@ -152,9 +152,9 @@ public class NettyServer extends AbstractServer implements Server {
     public Collection<Channel> getChannels() {
         Collection<Channel> chs = new HashSet<Channel>();
         for (Channel channel : this.channels.values()) {
-            if (channel.isConnected()) {
+            if (channel.isConnected()) {//已连接，返回
                 chs.add(channel);
-            } else {
+            } else { //未连接，移除
                 channels.remove(NetUtils.toAddressString(channel.getRemoteAddress()));
             }
         }
