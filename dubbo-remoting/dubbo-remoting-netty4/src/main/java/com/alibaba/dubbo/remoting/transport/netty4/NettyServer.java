@@ -109,6 +109,7 @@ public class NettyServer extends AbstractServer implements Server {
 
     @Override
     protected void doClose() throws Throwable {
+        //关闭服务器通道
         try {
             if (channel != null) {
                 // unbind.
@@ -117,6 +118,7 @@ public class NettyServer extends AbstractServer implements Server {
         } catch (Throwable e) {
             logger.warn(e.getMessage(), e);
         }
+        //关闭连接到服务器的客户端通道
         try {
             Collection<com.alibaba.dubbo.remoting.Channel> channels = getChannels();
             if (channels != null && channels.size() > 0) {
@@ -131,6 +133,7 @@ public class NettyServer extends AbstractServer implements Server {
         } catch (Throwable e) {
             logger.warn(e.getMessage(), e);
         }
+        //优雅关闭工作组
         try {
             if (bootstrap != null) {
                 bossGroup.shutdownGracefully();
@@ -139,6 +142,7 @@ public class NettyServer extends AbstractServer implements Server {
         } catch (Throwable e) {
             logger.warn(e.getMessage(), e);
         }
+        //清空连接到服务器的客户端通道
         try {
             if (channels != null) {
                 channels.clear();
