@@ -73,12 +73,16 @@ final class NettyCodecAdapter {
 
         @Override
         protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
+            //创建NettyBackedChannelBuffer对象
             com.alibaba.dubbo.remoting.buffer.ChannelBuffer buffer = new NettyBackedChannelBuffer(out);
+            //获得NettyChannel对象
             Channel ch = ctx.channel();
             NettyChannel channel = NettyChannel.getOrAddChannel(ch, url, handler);
             try {
+                //编码
                 codec.encode(channel, buffer, msg);
             } finally {
+                //移除NettyChannel对象,若断开连接
                 NettyChannel.removeChannelIfDisconnected(ch);
             }
         }
