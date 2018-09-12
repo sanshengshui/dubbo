@@ -92,11 +92,11 @@ final class NettyCodecAdapter {
 
         @Override
         protected void decode(ChannelHandlerContext ctx, ByteBuf input, List<Object> out) throws Exception {
-
+            //创建NettyBackedChannelBuffer对象
             ChannelBuffer message = new NettyBackedChannelBuffer(input);
-
+            //获得NettyChannel对象
             NettyChannel channel = NettyChannel.getOrAddChannel(ctx.channel(), url, handler);
-
+            //循环解析,直到结束
             Object msg;
 
             int saveReaderIndex;
@@ -104,15 +104,19 @@ final class NettyCodecAdapter {
             try {
                 // decode object.
                 do {
+                    //记录当前读进度
                     saveReaderIndex = message.readerIndex();
+                    //解码
                     try {
                         msg = codec.decode(channel, message);
                     } catch (IOException e) {
                         throw e;
                     }
+                    // 需要更多输入，即消息不完整，标记回原有读进度，并结束
                     if (msg == Codec2.DecodeResult.NEED_MORE_INPUT) {
                         message.readerIndex(saveReaderIndex);
                         break;
+                        // 解码到消息，添加到 `out`
                     } else {
                         //is it possible to go here ?
                         if (saveReaderIndex == message.readerIndex()) {
@@ -124,6 +128,7 @@ final class NettyCodecAdapter {
                     }
                 } while (message.readable());
             } finally {
+                // 移除 NettyChannel 对象，若断开连接
                 NettyChannel.removeChannelIfDisconnected(ctx.channel());
             }
         }
