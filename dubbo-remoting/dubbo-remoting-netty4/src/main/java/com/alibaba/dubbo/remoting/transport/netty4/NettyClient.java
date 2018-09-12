@@ -57,30 +57,36 @@ public class NettyClient extends AbstractClient {
 
     @Override
     protected void doOpen() throws Throwable {
+        //创建NettyClientHandler对象
         final NettyClientHandler nettyClientHandler = new NettyClientHandler(getUrl(), this);
+        //实例化ServerBootstrap
         bootstrap = new Bootstrap();
+        //设置它的线程组
         bootstrap.group(nioEventLoopGroup)
+                //设置可选项
                 .option(ChannelOption.SO_KEEPALIVE, true)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                 //.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, getTimeout())
+                //设置Channel类型
                 .channel(NioSocketChannel.class);
-
+        //设置连接超时时间
         if (getTimeout() < 3000) {
             bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000);
         } else {
             bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, getTimeout());
         }
-
+        //设置责任链路
         bootstrap.handler(new ChannelInitializer() {
 
             @Override
             protected void initChannel(Channel ch) throws Exception {
+                //创建NettyCodecAdapter对象
                 NettyCodecAdapter adapter = new NettyCodecAdapter(getCodec(), getUrl(), NettyClient.this);
                 ch.pipeline()//.addLast("logging",new LoggingHandler(LogLevel.INFO))//for debug
-                        .addLast("decoder", adapter.getDecoder())
-                        .addLast("encoder", adapter.getEncoder())
-                        .addLast("handler", nettyClientHandler);
+                        .addLast("decoder", adapter.getDecoder())//解码
+                        .addLast("encoder", adapter.getEncoder())//解码
+                        .addLast("handler", nettyClientHandler);//处理器
             }
         });
     }
