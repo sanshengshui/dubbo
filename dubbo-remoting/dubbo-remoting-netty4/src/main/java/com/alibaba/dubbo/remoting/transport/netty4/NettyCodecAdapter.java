@@ -34,15 +34,25 @@ import java.util.List;
  * NettyCodecAdapter.
  */
 final class NettyCodecAdapter {
-
+    /**
+     * Netty编码器
+     */
     private final ChannelHandler encoder = new InternalEncoder();
-
+    /**
+     * Netty 解码器
+     */
     private final ChannelHandler decoder = new InternalDecoder();
-
+    /**
+     * Dubbo 编解码器
+     */
     private final Codec2 codec;
-
+    /**
+     * Dubbo URL
+     */
     private final URL url;
-
+    /**
+     * Dubbo ChannelHandler
+     */
     private final com.alibaba.dubbo.remoting.ChannelHandler handler;
 
     public NettyCodecAdapter(Codec2 codec, URL url, com.alibaba.dubbo.remoting.ChannelHandler handler) {
