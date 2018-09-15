@@ -38,7 +38,9 @@ import org.mortbay.thread.QueuedThreadPool;
 public class JettyHttpServer extends AbstractHttpServer {
 
     private static final Logger logger = LoggerFactory.getLogger(JettyHttpServer.class);
-
+    /**
+     * 内嵌的Jetty服务器
+     */
     private Server server;
 
     private URL url;
@@ -46,13 +48,14 @@ public class JettyHttpServer extends AbstractHttpServer {
     public JettyHttpServer(URL url, final HttpHandler handler) {
         super(url, handler);
         this.url = url;
+        //设置日志的配置
         // TODO we should leave this setting to slf4j
         // we must disable the debug logging for production use
         Log.setLog(new StdErrLog());
         Log.getLog().setDebugEnabled(false);
-
+        //注册HttpHandler到DispatcherServlet中
         DispatcherServlet.addHttpHandler(url.getParameter(Constants.BIND_PORT_KEY, url.getPort()), handler);
-
+        //创建线程池
         int threads = url.getParameter(Constants.THREADS_KEY, Constants.DEFAULT_THREADS);
         QueuedThreadPool threadPool = new QueuedThreadPool();
         threadPool.setDaemon(true);
