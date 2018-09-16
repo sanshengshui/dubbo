@@ -61,7 +61,7 @@ public class JettyHttpServer extends AbstractHttpServer {
         threadPool.setDaemon(true);
         threadPool.setMaxThreads(threads);
         threadPool.setMinThreads(threads);
-
+        //创建 Jetty Connector 对象
         SelectChannelConnector connector = new SelectChannelConnector();
 
         String bindIp = url.getParameter(Constants.BIND_IP_KEY, url.getHost());
@@ -69,11 +69,11 @@ public class JettyHttpServer extends AbstractHttpServer {
             connector.setHost(bindIp);
         }
         connector.setPort(url.getParameter(Constants.BIND_PORT_KEY, url.getPort()));
-
+        //创建内嵌的Jetty对象
         server = new Server();
         server.setThreadPool(threadPool);
         server.addConnector(connector);
-
+        //添加ServletContext对象,到ServletManager中
         ServletHandler servletHandler = new ServletHandler();
         ServletHolder servletHolder = servletHandler.addServletWithMapping(DispatcherServlet.class, "/*");
         servletHolder.setInitOrder(2);
@@ -84,7 +84,7 @@ public class JettyHttpServer extends AbstractHttpServer {
         Context context = new Context(server, "/", Context.SESSIONS);
         context.setServletHandler(servletHandler);
         ServletManager.getInstance().addServletContext(url.getParameter(Constants.BIND_PORT_KEY, url.getPort()), context.getServletContext());
-
+        //启动Jetty
         try {
             server.start();
         } catch (Exception e) {
@@ -95,11 +95,12 @@ public class JettyHttpServer extends AbstractHttpServer {
 
     @Override
     public void close() {
+        //标记关闭
         super.close();
 
-        //
+        //移除ServletContext对象
         ServletManager.getInstance().removeServletContext(url.getParameter(Constants.BIND_PORT_KEY, url.getPort()));
-
+        //关闭Jetty
         if (server != null) {
             try {
                 server.stop();
