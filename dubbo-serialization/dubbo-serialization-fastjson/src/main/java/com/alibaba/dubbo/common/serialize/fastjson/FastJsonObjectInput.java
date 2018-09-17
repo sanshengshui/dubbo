@@ -103,6 +103,12 @@ public class FastJsonObjectInput implements ObjectInput {
         return (T) PojoUtils.realize(value, cls, type);
     }
 
+    /**
+     * 读取一行字符串
+     * @return 字符串
+     * @throws IOException 当IO发生异常
+     * @throws EOFException 当读取到空行
+     */
     private String readLine() throws IOException, EOFException {
         String line = reader.readLine();
         if (line == null || line.trim().length() == 0) throw new EOFException();

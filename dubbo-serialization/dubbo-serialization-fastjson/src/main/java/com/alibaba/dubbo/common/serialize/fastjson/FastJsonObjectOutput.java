@@ -28,7 +28,9 @@ import java.io.PrintWriter;
 import java.io.Writer;
 
 public class FastJsonObjectOutput implements ObjectOutput {
-
+    /**
+     * PrintWriter对象
+     */
     private final PrintWriter writer;
 
     public FastJsonObjectOutput(OutputStream out) {
@@ -81,23 +83,27 @@ public class FastJsonObjectOutput implements ObjectOutput {
 
     @Override
     public void writeBytes(byte[] b) throws IOException {
+        //转成字符串
         writer.println(new String(b));
     }
 
     @Override
     public void writeBytes(byte[] b, int off, int len) throws IOException {
+        //转成字符串
         writer.println(new String(b, off, len));
     }
 
     @Override
     public void writeObject(Object obj) throws IOException {
         SerializeWriter out = new SerializeWriter();
+        //序列化,写入对象
         JSONSerializer serializer = new JSONSerializer(out);
         serializer.config(SerializerFeature.WriteEnumUsingToString, true);
         serializer.write(obj);
+        //写到,输入流
         out.writeTo(writer);
         out.close(); // for reuse SerializeWriter buf
-        writer.println();
+        writer.println();//换行
         writer.flush();
     }
 

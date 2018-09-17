@@ -74,10 +74,13 @@ public class FstObjectInput implements ObjectInput {
     @Override
     public byte[] readBytes() throws IOException {
         int len = input.readInt();
+        //数组为空
         if (len < 0) {
             return null;
+            //数组为零
         } else if (len == 0) {
             return new byte[]{};
+            //数组>0
         } else {
             byte[] b = new byte[len];
             input.readFully(b);
