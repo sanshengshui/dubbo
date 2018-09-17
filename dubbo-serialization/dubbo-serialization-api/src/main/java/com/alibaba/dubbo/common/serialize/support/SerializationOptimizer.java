@@ -23,6 +23,9 @@ import java.util.Collection;
  *
  */
 public interface SerializationOptimizer {
-
+    /**
+     *
+     * @return 需要使用优化的类的集合
+     */
     Collection<Class> getSerializableClasses();
 }
