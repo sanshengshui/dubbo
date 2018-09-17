@@ -20,6 +20,7 @@ import java.io.IOException;
 
 /**
  * Object output.
+ * 在DataOutput的基础中,增加写入对象的数据
  */
 public interface ObjectOutput extends DataOutput {
 

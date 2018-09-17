@@ -16,6 +16,10 @@
  */
 package com.alibaba.dubbo.common.serialize;
 
+/**
+ * 清理接口
+ * 部分Serialize实现类,完成序列化或反序列化,需要做清理.通过实现该接口,执行清理的逻辑
+ */
 public interface Cleanable {
 
     void cleanup();
