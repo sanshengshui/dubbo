@@ -32,36 +32,36 @@ public interface Serialization {
 
     /**
      * get content type id
-     *
+     * 获得内容类型编号
      * @return content type id
      */
     byte getContentTypeId();
 
     /**
      * get content type
-     *
+     * 获得内容类型名
      * @return content type
      */
     String getContentType();
 
     /**
      * create serializer
-     *
-     * @param url
-     * @param output
+     * 创建ObjectOutput对象，序列化输出到OutputStream
+     * @param url URL
+     * @param output 输出流
      * @return serializer
-     * @throws IOException
+     * @throws IOException 当发生IO异常时
      */
     @Adaptive
     ObjectOutput serialize(URL url, OutputStream output) throws IOException;
 
     /**
      * create deserializer
-     *
-     * @param url
-     * @param input
+     * 创建ObjectInput对象，从InputStream 反序列化
+     * @param url URL
+     * @param input 输入流
      * @return deserializer
-     * @throws IOException
+     * @throws IOException 当发生IO异常时
      */
     @Adaptive
     ObjectInput deserialize(URL url, InputStream input) throws IOException;
