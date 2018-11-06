@@ -44,6 +44,8 @@ public abstract class AbstractConfig implements Serializable {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractConfig.class);
     private static final long serialVersionUID = 4267533505537413570L;
+
+    // ========== 属性值的格式校验，参见本类的 `#checkXXX` 方法 BEGIN ==========
     private static final int MAX_LENGTH = 200;
 
     private static final int MAX_PATH_LENGTH = 200;
@@ -59,6 +61,8 @@ public abstract class AbstractConfig implements Serializable {
     private static final Pattern PATTERN_NAME_HAS_SYMBOL = Pattern.compile("[:*,/\\-._0-9a-zA-Z]+");
 
     private static final Pattern PATTERN_KEY = Pattern.compile("[*,\\-._0-9a-zA-Z]+");
+
+    // ========== 属性值的格式校验，参见本类的 `#checkXXX` 方法 END ==========
     private static final Map<String, String> legacyProperties = new HashMap<String, String>();
     private static final String[] SUFFIXES = new String[]{"Config", "Bean"};
 
@@ -320,6 +324,7 @@ public abstract class AbstractConfig implements Serializable {
         return value;
     }
 
+    // ========== 静态方法 BEGIN==========
     protected static void checkExtension(Class<?> type, String property, String value) {
         checkName(property, value);
         if (value != null && value.length() > 0
@@ -402,6 +407,7 @@ public abstract class AbstractConfig implements Serializable {
             }
         }
     }
+    // ========== 静态方法 END==========
 
     @Parameter(excluded = true)
     public String getId() {
