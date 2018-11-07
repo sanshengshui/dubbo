@@ -23,6 +23,7 @@ import java.util.List;
 
 /**
  * ModuleConfig
+ * 模块信息配置
  *
  * @export
  */
