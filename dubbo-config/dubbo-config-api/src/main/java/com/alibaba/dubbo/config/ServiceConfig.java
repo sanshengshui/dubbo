@@ -64,6 +64,8 @@ import static com.alibaba.dubbo.common.utils.NetUtils.isInvalidPort;
 
 /**
  * ServiceConfig
+ * 服务提供者暴露服务配置.
+ * 参数详细：http://dubbo.io/books/dubbo-user-book/references/xml/dubbo-service.html
  *
  * @export
  */
@@ -260,18 +262,23 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         //从ProviderConfig对象中，读取application,module,registries,monitor,protocols配置对象
         if (provider != null) {
             if (application == null) {
+                //当前应用配置 ApplicationConfig
                 application = provider.getApplication();
             }
             if (module == null) {
+                //模块信息配置 ModuleConfig
                 module = provider.getModule();
             }
             if (registries == null) {
+                //注册中心配置 RegistryConfig
                 registries = provider.getRegistries();
             }
             if (monitor == null) {
+                //监控中心配置 MonitorConfig
                 monitor = provider.getMonitor();
             }
             if (protocols == null) {
+                //服务提供者协议配置
                 protocols = provider.getProtocols();
             }
         }
