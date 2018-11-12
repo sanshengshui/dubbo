@@ -142,6 +142,7 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                 // 设置 `<dubbo:service ref="" />` 属性
                 beanDefinition.getPropertyValues().addPropertyValue("ref", new BeanDefinitionHolder(classDefinition, id + "Impl"));
             }
+            // 解析 `<dubbo:provider />` 的内嵌子元素 `<dubbo:service />`
         } else if (ProviderConfig.class.equals(beanClass)) {
             parseNested(element, parserContext, ServiceBean.class, true, "service", "provider", id, beanDefinition);
         } else if (ConsumerConfig.class.equals(beanClass)) {
