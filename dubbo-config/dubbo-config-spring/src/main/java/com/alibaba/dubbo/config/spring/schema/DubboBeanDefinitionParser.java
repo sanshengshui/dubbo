@@ -305,6 +305,13 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                 || cls == String.class || cls == Date.class || cls == Class.class;
     }
 
+    /**
+     * 解析多指向的情况，例如多注册中心，多协议等等.
+     * @param property 属性
+     * @param value 值
+     * @param beanDefinition 定义对象
+     * @param parserContext 解析上下文
+     */
     @SuppressWarnings("unchecked")
     private static void parseMultiRef(String property, String value, RootBeanDefinition beanDefinition,
                                       ParserContext parserContext) {
