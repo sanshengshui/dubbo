@@ -42,7 +42,7 @@ public interface ProxyFactory {
      * @param <T>
      * @param proxy Service 对象
      * @param type Service 接口类型
-     * @param url
+     * @param url Service 对应的Dubbo URL.
      * @return invoker
      */
     @Adaptive({Constants.PROXY_KEY})
