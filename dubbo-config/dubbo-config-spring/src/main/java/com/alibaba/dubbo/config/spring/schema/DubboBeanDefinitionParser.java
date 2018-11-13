@@ -348,6 +348,12 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
         }
     }
 
+    /**
+     * 解析 <dubbo:service class="" /> 情况下，内涵的 `<property />` 的赋值。
+     *
+     * @param nodeList 子元素数组
+     * @param beanDefinition Bean 定义对象
+     */
     private static void parseProperties(NodeList nodeList, RootBeanDefinition beanDefinition) {
         if (nodeList != null && nodeList.getLength() > 0) {
             for (int i = 0; i < nodeList.getLength(); i++) {
@@ -359,8 +365,10 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                         if (name != null && name.length() > 0) {
                             String value = ((Element) node).getAttribute("value");
                             String ref = ((Element) node).getAttribute("ref");
+                            // value
                             if (value != null && value.length() > 0) {
                                 beanDefinition.getPropertyValues().addPropertyValue(name, value);
+                                // ref
                             } else if (ref != null && ref.length() > 0) {
                                 beanDefinition.getPropertyValues().addPropertyValue(name, new RuntimeBeanReference(ref));
                             } else {
