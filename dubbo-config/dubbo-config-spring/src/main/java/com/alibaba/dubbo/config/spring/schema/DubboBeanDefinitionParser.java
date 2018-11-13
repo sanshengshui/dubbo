@@ -429,25 +429,36 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
         return null;
     }
 
+    /**
+     * 解析'<dubbo:method/>'
+     *
+     * @param id Bean的'id'属性
+     * @param nodeList 子元素节点数组
+     * @param beanDefinition 定义对象
+     * @param parserContext 解析上下文
+     */
     @SuppressWarnings("unchecked")
     private static void parseMethods(String id, NodeList nodeList, RootBeanDefinition beanDefinition,
                                      ParserContext parserContext) {
         if (nodeList != null && nodeList.getLength() > 0) {
-            ManagedList methods = null;
+            ManagedList methods = null; // 解析的方法数组
             for (int i = 0; i < nodeList.getLength(); i++) {
                 Node node = nodeList.item(i);
                 if (node instanceof Element) {
                     Element element = (Element) node;
-                    if ("method".equals(node.getNodeName()) || "method".equals(node.getLocalName())) {
+                    if ("method".equals(node.getNodeName()) || "method".equals(node.getLocalName())) { // 这三行，判断值解析 `<dubbo:method />`
                         String methodName = element.getAttribute("name");
+                        // 方法名不能为空
                         if (methodName == null || methodName.length() == 0) {
                             throw new IllegalStateException("<dubbo:method> name attribute == null");
                         }
                         if (methods == null) {
                             methods = new ManagedList();
                         }
+                        // 解析 `<dubbo:method />`，创建 BeanDefinition 对象
                         BeanDefinition methodBeanDefinition = parse(((Element) node),
                                 parserContext, MethodConfig.class, false);
+                        // 添加到 `methods` 中
                         String name = id + "." + methodName;
                         BeanDefinitionHolder methodBeanDefinitionHolder = new BeanDefinitionHolder(
                                 methodBeanDefinition, name);
