@@ -322,6 +322,18 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
         beanDefinition.getPropertyValues().addPropertyValue(property, list);
     }
 
+    /**
+       * 解析内嵌的指向的子 XML 元素
+       *
+       * @param element 父 XML 元素
+       * @param parserContext Spring 解析上下文
+       * @param beanClass 内嵌解析子元素的 Bean 的类
+       * @param required 是否需要 Bean 的 `id` 属性
+       * @param tag 标签
+       * @param property 父 Bean 对象在子元素中的属性名
+       * @param ref 指向
+       * @param beanDefinition 父 Bean 定义对象
+      */
     private static void parseNested(Element element, ParserContext parserContext, Class<?> beanClass, boolean required, String tag, String property, String ref, BeanDefinition beanDefinition) {
         NodeList nodeList = element.getChildNodes();
         if (nodeList != null && nodeList.getLength() > 0) {
@@ -330,7 +342,7 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                 Node node = nodeList.item(i);
                 if (node instanceof Element) {
                     if (tag.equals(node.getNodeName())
-                            || tag.equals(node.getLocalName())) {
+                            || tag.equals(node.getLocalName())) {// 这三行，判断是否为指定要解析的子元素
                         if (first) {
                             first = false;
                             String isDefault = element.getAttribute("default");
@@ -338,7 +350,9 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                                 beanDefinition.getPropertyValues().addPropertyValue("default", "false");
                             }
                         }
+                        // 解析子元素，创建 BeanDefinition 对象
                         BeanDefinition subDefinition = parse((Element) node, parserContext, beanClass, required);
+                        // 设置子 BeanDefinition ，指向父 BeanDefinition 。
                         if (subDefinition != null && ref != null && ref.length() > 0) {
                             subDefinition.getPropertyValues().addPropertyValue(property, new RuntimeBeanReference(ref));
                         }
