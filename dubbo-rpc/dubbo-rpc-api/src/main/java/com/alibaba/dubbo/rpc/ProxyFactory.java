@@ -29,8 +29,8 @@ public interface ProxyFactory {
 
     /**
      * create proxy.
-     *
-     * @param invoker
+     * 创建 Proxy,在引用服务调用。
+     * @param invoker Consumer对provider调用的Invoker.
      * @return proxy
      */
     @Adaptive({Constants.PROXY_KEY})
@@ -38,10 +38,10 @@ public interface ProxyFactory {
 
     /**
      * create invoker.
-     *
+     * 创建Invoker,在暴露服务时调用。
      * @param <T>
-     * @param proxy
-     * @param type
+     * @param proxy Service 对象
+     * @param type Service 接口类型
      * @param url
      * @return invoker
      */
