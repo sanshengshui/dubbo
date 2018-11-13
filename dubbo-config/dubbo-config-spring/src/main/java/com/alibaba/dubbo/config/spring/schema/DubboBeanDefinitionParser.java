@@ -402,6 +402,13 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
         }
     }
 
+    /**
+     * 解析 '<dubbo:parameter/>'
+     *
+     * @param nodeList 子元素节点数组
+     * @param beanDefinition 定义对象
+     * @return 参数集合
+     */
     @SuppressWarnings("unchecked")
     private static ManagedMap parseParameters(NodeList nodeList, RootBeanDefinition beanDefinition) {
         if (nodeList != null && nodeList.getLength() > 0) {
@@ -410,13 +417,14 @@ public class DubboBeanDefinitionParser implements BeanDefinitionParser {
                 Node node = nodeList.item(i);
                 if (node instanceof Element) {
                     if ("parameter".equals(node.getNodeName())
-                            || "parameter".equals(node.getLocalName())) {
+                            || "parameter".equals(node.getLocalName())) {// 这三行，只解析子元素中的 `<dubbo:parameter />`
                         if (parameters == null) {
                             parameters = new ManagedMap();
                         }
+                        //添加到参数集合
                         String key = ((Element) node).getAttribute("key");
                         String value = ((Element) node).getAttribute("value");
-                        boolean hide = "true".equals(((Element) node).getAttribute("hide"));
+                        boolean hide = "true".equals(((Element) node).getAttribute("hide"));// 【TODO 8007】 <dubbo:parameter hide=“” /> 的用途
                         if (hide) {
                             key = Constants.HIDE_KEY_PREFIX + key;
                         }
