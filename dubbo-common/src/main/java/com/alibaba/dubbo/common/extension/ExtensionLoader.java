@@ -670,16 +670,27 @@ public class ExtensionLoader<T> {
         return extensionClasses;
     }
 
+    /**
+     * 从一个配置文件中,加载拓展实现类数组
+     *
+     * @param extensionClasses
+     * @param dir
+     */
     private void loadDirectory(Map<String, Class<?>> extensionClasses, String dir) {
+        /**
+         * 完整的文件名
+         */
         String fileName = dir + type.getName();
         try {
             Enumeration<java.net.URL> urls;
+            //获得文件名对应的所有文件数组
             ClassLoader classLoader = findClassLoader();
             if (classLoader != null) {
                 urls = classLoader.getResources(fileName);
             } else {
                 urls = ClassLoader.getSystemResources(fileName);
             }
+            //遍历文件数组
             if (urls != null) {
                 while (urls.hasMoreElements()) {
                     java.net.URL resourceURL = urls.nextElement();
@@ -698,11 +709,13 @@ public class ExtensionLoader<T> {
             try {
                 String line;
                 while ((line = reader.readLine()) != null) {
+                    // 跳过当前被注释掉的情况，例如 #spring=xxxxxxxxx
                     final int ci = line.indexOf('#');
                     if (ci >= 0) line = line.substring(0, ci);
                     line = line.trim();
                     if (line.length() > 0) {
                         try {
+                            // 拆分，key=value 的配置格式
                             String name = null;
                             int i = line.indexOf('=');
                             if (i > 0) {
@@ -710,6 +723,7 @@ public class ExtensionLoader<T> {
                                 line = line.substring(i + 1).trim();
                             }
                             if (line.length() > 0) {
+                                // 判断拓展实现，是否实现拓展接口
                                 loadClass(extensionClasses, resourceURL, Class.forName(line, true, classLoader), name);
                             }
                         } catch (Throwable t) {
@@ -733,6 +747,7 @@ public class ExtensionLoader<T> {
                     type + ", class line: " + clazz.getName() + "), class "
                     + clazz.getName() + "is not subtype of interface.");
         }
+        // 缓存自适应拓展对象的类到 `cachedAdaptiveClass`
         if (clazz.isAnnotationPresent(Adaptive.class)) {
             if (cachedAdaptiveClass == null) {
                 cachedAdaptiveClass = clazz;
@@ -741,6 +756,7 @@ public class ExtensionLoader<T> {
                         + cachedAdaptiveClass.getClass().getName()
                         + ", " + clazz.getClass().getName());
             }
+            // 缓存拓展 Wrapper 实现类到 `cachedWrapperClasses`
         } else if (isWrapperClass(clazz)) {
             Set<Class<?>> wrappers = cachedWrapperClasses;
             if (wrappers == null) {
@@ -748,24 +764,30 @@ public class ExtensionLoader<T> {
                 wrappers = cachedWrapperClasses;
             }
             wrappers.add(clazz);
+            // 缓存拓展实现类到 `extensionClasses`
         } else {
             clazz.getConstructor();
+            // 未配置拓展名，自动生成。例如，DemoFilter 为 demo 。主要用于兼容 Java SPI 的配置。
             if (name == null || name.length() == 0) {
                 name = findAnnotationName(clazz);
                 if (name.length() == 0) {
                     throw new IllegalStateException("No such extension name for the class " + clazz.getName() + " in the config " + resourceURL);
                 }
             }
+            // 获得拓展名，可以是数组，有多个拓展名。
             String[] names = NAME_SEPARATOR.split(name);
             if (names != null && names.length > 0) {
+                // 缓存 @Activate 到 `cachedActivates` 。
                 Activate activate = clazz.getAnnotation(Activate.class);
                 if (activate != null) {
                     cachedActivates.put(names[0], activate);
                 }
                 for (String n : names) {
+                    // 缓存到 `cachedNames`
                     if (!cachedNames.containsKey(clazz)) {
                         cachedNames.put(clazz, n);
                     }
+                    // 缓存拓展实现类到 `extensionClasses`
                     Class<?> c = extensionClasses.get(n);
                     if (c == null) {
                         extensionClasses.put(n, clazz);
