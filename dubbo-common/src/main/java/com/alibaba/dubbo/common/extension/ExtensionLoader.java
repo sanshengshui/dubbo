@@ -531,24 +531,34 @@ public class ExtensionLoader<T> {
         }
     }
 
+    /**
+     * 获得自适应拓展对象
+     * @return 拓展对象
+     */
     @SuppressWarnings("unchecked")
     public T getAdaptiveExtension() {
+        // 从缓存中，获得自适应拓展对象
         Object instance = cachedAdaptiveInstance.get();
         if (instance == null) {
+            // 若之前未创建报错，
             if (createAdaptiveInstanceError == null) {
                 synchronized (cachedAdaptiveInstance) {
                     instance = cachedAdaptiveInstance.get();
                     if (instance == null) {
                         try {
+                            // 创建自适应拓展对象
                             instance = createAdaptiveExtension();
+                            // 设置到缓存
                             cachedAdaptiveInstance.set(instance);
                         } catch (Throwable t) {
+                            // 记录异常
                             createAdaptiveInstanceError = t;
                             throw new IllegalStateException("fail to create adaptive instance: " + t.toString(), t);
                         }
                     }
                 }
             } else {
+                // 若之前创建报错，则抛出异常 IllegalStateException
                 throw new IllegalStateException("fail to create adaptive instance: " + createAdaptiveInstanceError.toString(), createAdaptiveInstanceError);
             }
         }
