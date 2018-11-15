@@ -167,6 +167,13 @@ public class ExtensionLoader<T> {
      */
     private Map<String, IllegalStateException> exceptions = new ConcurrentHashMap<String, IllegalStateException>();
 
+    /**
+     * 对象工厂
+     *
+     * 用于调用 {@link #injectExtension(Object)} 方法，向拓展对象注入依赖属性。
+     *
+     * 例如，StubProxyFactoryWrapper 中有 `Protocol protocol` 属性。
+     */
     private ExtensionLoader(Class<?> type) {
         this.type = type;
         objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
