@@ -43,9 +43,19 @@ public class ProtocolFilterWrapper implements Protocol {
         this.protocol = protocol;
     }
 
+    /**
+     * 创建带Filter链的Invoker对象
+     * @param invoker Invoker对象
+     * @param key 获取URL参数名
+     * @param group 分组
+     * @param <T> 泛型
+     * @return Invoker对象
+     */
     private static <T> Invoker<T> buildInvokerChain(final Invoker<T> invoker, String key, String group) {
         Invoker<T> last = invoker;
+        //获得过滤器数组
         List<Filter> filters = ExtensionLoader.getExtensionLoader(Filter.class).getActivateExtension(invoker.getUrl(), key, group);
+        // 倒序循环 Filter ，创建带 Filter 链的 Invoker 对象
         if (!filters.isEmpty()) {
             for (int i = filters.size() - 1; i >= 0; i--) {
                 final Filter filter = filters.get(i);
