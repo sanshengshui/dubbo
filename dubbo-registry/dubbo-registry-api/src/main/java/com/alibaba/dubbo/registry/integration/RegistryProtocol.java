@@ -242,15 +242,16 @@ public class RegistryProtocol implements Protocol {
      * @return
      */
     private URL getRegistedProviderUrl(final Invoker<?> originInvoker) {
+        // 从注册中心的 export 参数中，获得服务提供者的 URL
         URL providerUrl = getProviderUrl(originInvoker);
         //The address you see at the registry
-        final URL registedProviderUrl = providerUrl.removeParameters(getFilteredKeys(providerUrl))
-                .removeParameter(Constants.MONITOR_KEY)
-                .removeParameter(Constants.BIND_IP_KEY)
-                .removeParameter(Constants.BIND_PORT_KEY)
-                .removeParameter(QOS_ENABLE)
-                .removeParameter(QOS_PORT)
-                .removeParameter(ACCEPT_FOREIGN_IP);
+        final URL registedProviderUrl = providerUrl.removeParameters(getFilteredKeys(providerUrl))// 移除 .hide 为前缀的参数
+                .removeParameter(Constants.MONITOR_KEY)// monitor
+                .removeParameter(Constants.BIND_IP_KEY)// bind.ip
+                .removeParameter(Constants.BIND_PORT_KEY)// bind.port
+                .removeParameter(QOS_ENABLE)// qos.enable
+                .removeParameter(QOS_PORT) // qos.port
+                .removeParameter(ACCEPT_FOREIGN_IP);// qos.accept.foreign.ip
         return registedProviderUrl;
     }
 
@@ -267,7 +268,7 @@ public class RegistryProtocol implements Protocol {
      * @return
      */
     private URL getProviderUrl(final Invoker<?> origininvoker) {
-        String export = origininvoker.getUrl().getParameterAndDecoded(Constants.EXPORT_KEY);
+        String export = origininvoker.getUrl().getParameterAndDecoded(Constants.EXPORT_KEY);//export
         if (export == null || export.length() == 0) {
             throw new IllegalArgumentException("The registry export url is null! registry: " + origininvoker.getUrl());
         }
