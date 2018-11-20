@@ -261,6 +261,10 @@ public class DubboProtocol extends AbstractProtocol {
         return exporter;
     }
 
+    /**
+     * 启动服务器
+     * @param url
+     */
     private void openServer(URL url) {
         // find server.
         String key = url.getAddress();
