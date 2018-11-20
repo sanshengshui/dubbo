@@ -62,6 +62,9 @@ public class DubboProtocol extends AbstractProtocol {
     public static final int DEFAULT_PORT = 20880;
     private static final String IS_CALLBACK_SERVICE_INVOKE = "_isCallBackServiceInvoke";
     private static DubboProtocol INSTANCE;
+    /**
+     * 通信服务器集合
+     */
     private final Map<String, ExchangeServer> serverMap = new ConcurrentHashMap<String, ExchangeServer>(); // <host:port,Exchanger>
     /**
      * 通信客户端集合
@@ -231,6 +234,7 @@ public class DubboProtocol extends AbstractProtocol {
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
         URL url = invoker.getUrl();
 
+        // 创建 DubboExporter 对象，并添加到 `exporterMap` 。
         // export service.
         String key = serviceKey(url);
         DubboExporter<T> exporter = new DubboExporter<T>(invoker, key, exporterMap);
@@ -250,8 +254,9 @@ public class DubboProtocol extends AbstractProtocol {
                 stubServiceMethodsMap.put(url.getServiceKey(), stubServiceMethods);
             }
         }
-
+        //启动服务器
         openServer(url);
+        //初始化序列化优化器
         optimizeSerialization(url);
         return exporter;
     }
