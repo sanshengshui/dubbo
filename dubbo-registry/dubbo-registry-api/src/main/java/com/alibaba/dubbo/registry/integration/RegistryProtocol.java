@@ -492,8 +492,13 @@ public class RegistryProtocol implements Protocol {
      * @param <T>
      */
     private class ExporterChangeableWrapper<T> implements Exporter<T> {
-
+        /**
+         * 原Invoker对象
+         */
         private final Invoker<T> originInvoker;
+        /**
+         * 暴露的Exporter对象
+         */
         private Exporter<T> exporter;
 
         public ExporterChangeableWrapper(Exporter<T> exporter, Invoker<T> originInvoker) {
@@ -517,7 +522,9 @@ public class RegistryProtocol implements Protocol {
         @Override
         public void unexport() {
             String key = getCacheKey(this.originInvoker);
+            //移除出'bounds'
             bounds.remove(key);
+            //取消暴露
             exporter.unexport();
         }
     }
