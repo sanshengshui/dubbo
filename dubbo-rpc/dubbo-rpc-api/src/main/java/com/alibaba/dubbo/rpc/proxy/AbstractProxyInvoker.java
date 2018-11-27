@@ -29,11 +29,17 @@ import java.lang.reflect.InvocationTargetException;
  * InvokerWrapper
  */
 public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
-
+    /**
+     * 代理的对象，一般是Service实现对象
+     */
     private final T proxy;
-
+    /**
+     * 接口类型，一般是Service接口
+     */
     private final Class<T> type;
-
+    /**
+     * URL对象，一般是暴露服务的URL对象
+     */
     private final URL url;
 
     public AbstractProxyInvoker(T proxy, Class<T> type, URL url) {
