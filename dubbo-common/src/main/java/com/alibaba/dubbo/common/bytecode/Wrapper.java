@@ -36,6 +36,11 @@ import java.util.regex.Matcher;
  * Wrapper.
  */
 public abstract class Wrapper {
+    /**
+     * Wrapper 对象缓存
+     * key : Wrapper类
+     * value : Proxy对象
+     */
     private static final Map<Class<?>, Wrapper> WRAPPER_MAP = new ConcurrentHashMap<Class<?>, Wrapper>(); //class wrapper map
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
     private static final String[] OBJECT_METHODS = new String[]{"getClass", "hashCode", "toString", "equals"};
@@ -96,13 +101,15 @@ public abstract class Wrapper {
      * @return Wrapper instance(not null).
      */
     public static Wrapper getWrapper(Class<?> c) {
+        //判断是否继承ClassGenerator.DC.class ，如果是，拿到父类，避免重复包装
         while (ClassGenerator.isDynamicClass(c)) // can not wrapper on dynamic class.
             c = c.getSuperclass();
-
+        //指定类为Object.class
         if (c == Object.class)
             return OBJECT_WRAPPER;
-
+        //从缓存中获得Wrapper对象
         Wrapper ret = WRAPPER_MAP.get(c);
+        //创建Wrapper对象，并添加到缓存
         if (ret == null) {
             ret = makeWrapper(c);
             WRAPPER_MAP.put(c, ret);
@@ -111,52 +118,64 @@ public abstract class Wrapper {
     }
 
     private static Wrapper makeWrapper(Class<?> c) {
+        //非私有类
         if (c.isPrimitive())
             throw new IllegalArgumentException("Can not create wrapper for primitive type: " + c);
-
+        //类名
         String name = c.getName();
+        // 类加载器
         ClassLoader cl = ClassHelper.getClassLoader(c);
-
+        // 设置属性方法 `#setPropertyValue(o, n, v)` 的开头的代码
         StringBuilder c1 = new StringBuilder("public void setPropertyValue(Object o, String n, Object v){ ");
+        // 获得属性方法 `#getPropertyValue(o, n)` 的开头的代码
         StringBuilder c2 = new StringBuilder("public Object getPropertyValue(Object o, String n){ ");
+        // 调用方法 `#invokeMethod(o, n, p, v)` 的开头的代码
         StringBuilder c3 = new StringBuilder("public Object invokeMethod(Object o, String n, Class[] p, Object[] v) throws " + InvocationTargetException.class.getName() + "{ ");
-
+        // 添加每个方法的，被调用对象的类型转换的代码
         c1.append(name).append(" w; try{ w = ((").append(name).append(")$1); }catch(Throwable e){ throw new IllegalArgumentException(e); }");
         c2.append(name).append(" w; try{ w = ((").append(name).append(")$1); }catch(Throwable e){ throw new IllegalArgumentException(e); }");
         c3.append(name).append(" w; try{ w = ((").append(name).append(")$1); }catch(Throwable e){ throw new IllegalArgumentException(e); }");
-
+        // 属性名与属性名的集合，用于 `#hasProperty(...)` `#setPropertyValue(...)` `getPropertyValue(...)` 方法。
         Map<String, Class<?>> pts = new HashMap<String, Class<?>>(); // <property name, property types>
+        // 方法签名与方法对象的集合，用于 `#invokeMethod(..)` 方法。
         Map<String, Method> ms = new LinkedHashMap<String, Method>(); // <method desc, Method instance>
+        // 方法名数组用于 `#getMethodNames()` 方法。
         List<String> mns = new ArrayList<String>(); // method names.
+        // 定义的方法名数组，用于 `#getDeclaredMethodNames()` 方法。
         List<String> dmns = new ArrayList<String>(); // declaring method names.
 
+        // 循环 public 属性，添加每个属性的设置和获得分别到 `#setPropertyValue(o, n, v)` 和 `#getPropertyValue(o, n)` 的代码
         // get all public field.
         for (Field f : c.getFields()) {
             String fn = f.getName();
             Class<?> ft = f.getType();
-            if (Modifier.isStatic(f.getModifiers()) || Modifier.isTransient(f.getModifiers()))
+            if (Modifier.isStatic(f.getModifiers()) || Modifier.isTransient(f.getModifiers())) // 排除 static 和 transient
                 continue;
 
             c1.append(" if( $2.equals(\"").append(fn).append("\") ){ w.").append(fn).append("=").append(arg(ft, "$3")).append("; return; }");
             c2.append(" if( $2.equals(\"").append(fn).append("\") ){ return ($w)w.").append(fn).append("; }");
+            // 添加到 `pts` 中
             pts.put(fn, ft);
         }
 
         Method[] methods = c.getMethods();
+        // 如果有方法，添加 `#invokeMethod(o, n, p, v)` 的 try 的代码
         // get all public method.
         boolean hasMethod = hasMethods(methods);
         if (hasMethod) {
             c3.append(" try{");
         }
         for (Method m : methods) {
+            // 跳过来自 Object 的内置方法
             if (m.getDeclaringClass() == Object.class) //ignore Object's method.
                 continue;
 
-            String mn = m.getName();
+            String mn = m.getName();// 方法名
+            // 使用方法名 + 方法参数长度来判断
             c3.append(" if( \"").append(mn).append("\".equals( $2 ) ");
             int len = m.getParameterTypes().length;
             c3.append(" && ").append(" $3.length == ").append(len);
-
+            // 若相同方法名存在多个，增加参数类型数组的比较判断
             boolean override = false;
             for (Method m2 : methods) {
                 if (m != m2 && m.getName().equals(m2.getName())) {
