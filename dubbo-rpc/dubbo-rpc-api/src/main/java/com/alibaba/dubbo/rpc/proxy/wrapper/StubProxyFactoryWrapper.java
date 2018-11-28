@@ -42,6 +42,9 @@ public class StubProxyFactoryWrapper implements ProxyFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StubProxyFactoryWrapper.class);
 
+    /**
+     * ProxyFactory$Adaptive对象
+     */
     private final ProxyFactory proxyFactory;
 
     private Protocol protocol;
