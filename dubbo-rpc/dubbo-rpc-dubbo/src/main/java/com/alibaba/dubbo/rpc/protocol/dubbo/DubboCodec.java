@@ -183,11 +183,11 @@ public class DubboCodec extends ExchangeCodec implements Codec2 {
     @Override
     protected void encodeRequestData(Channel channel, ObjectOutput out, Object data) throws IOException {
         RpcInvocation inv = (RpcInvocation) data;
-
+        //写入'dubbo' 'path' 'version'
         out.writeUTF(inv.getAttachment(Constants.DUBBO_VERSION_KEY, DUBBO_VERSION));
         out.writeUTF(inv.getAttachment(Constants.PATH_KEY));
         out.writeUTF(inv.getAttachment(Constants.VERSION_KEY));
-
+        //写入方法,方法签名，方法参数集合
         out.writeUTF(inv.getMethodName());
         out.writeUTF(ReflectUtils.getDesc(inv.getParameterTypes()));
         Object[] args = inv.getArguments();
@@ -195,6 +195,7 @@ public class DubboCodec extends ExchangeCodec implements Codec2 {
             for (int i = 0; i < args.length; i++) {
                 out.writeObject(encodeInvocationArgument(channel, inv, i));
             }
+        //写入隐式传参集合
         out.writeObject(inv.getAttachments());
     }
 
@@ -203,14 +204,18 @@ public class DubboCodec extends ExchangeCodec implements Codec2 {
         Result result = (Result) data;
 
         Throwable th = result.getException();
+        //正常
         if (th == null) {
             Object ret = result.getValue();
+            //空返回
             if (ret == null) {
                 out.writeByte(RESPONSE_NULL_VALUE);
+                //有返回
             } else {
                 out.writeByte(RESPONSE_VALUE);
                 out.writeObject(ret);
             }
+            //异常
         } else {
             out.writeByte(RESPONSE_WITH_EXCEPTION);
             out.writeObject(th);
