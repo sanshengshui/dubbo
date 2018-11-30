@@ -103,7 +103,14 @@ public class FutureFilter implements Filter {
         }
     }
 
+    /**
+     * 触发前置方法
+     *
+     * @param invoker Invoker 对象
+     * @param invocation Invocation 对象
+     */
     private void fireInvokeCallback(final Invoker<?> invoker, final Invocation invocation) {
+        // 获得前置方法和对象
         final Method onInvokeMethod = (Method) StaticContext.getSystemContext().get(StaticContext.getKey(invoker.getUrl(), invocation.getMethodName(), Constants.ON_INVOKE_METHOD_KEY));
         final Object onInvokeInst = StaticContext.getSystemContext().get(StaticContext.getKey(invoker.getUrl(), invocation.getMethodName(), Constants.ON_INVOKE_INSTANCE_KEY));
 
@@ -117,6 +124,7 @@ public class FutureFilter implements Filter {
             onInvokeMethod.setAccessible(true);
         }
 
+        // 调用前置方法
         Object[] params = invocation.getArguments();
         try {
             onInvokeMethod.invoke(onInvokeInst, params);
