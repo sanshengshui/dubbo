@@ -82,8 +82,10 @@ public class DubboProtocol extends AbstractProtocol {
         public Object reply(ExchangeChannel channel, Object message) throws RemotingException {
             if (message instanceof Invocation) {
                 Invocation inv = (Invocation) message;
+                // 获得请求对应的Invoker对象
                 Invoker<?> invoker = getInvoker(channel, inv);
                 // need to consider backward-compatibility if it's a callback
+                // 如果时callback 需要处理高版本调用低版本的问题
                 if (Boolean.TRUE.toString().equals(inv.getAttachments().get(IS_CALLBACK_SERVICE_INVOKE))) {
                     String methodsStr = invoker.getUrl().getParameters().get("methods");
                     boolean hasMethod = false;
@@ -106,7 +108,9 @@ public class DubboProtocol extends AbstractProtocol {
                         return null;
                     }
                 }
+                //设置调用方的地址
                 RpcContext.getContext().setRemoteAddress(channel.getRemoteAddress());
+                //执行调用
                 return invoker.invoke(inv);
             }
             throw new RemotingException(channel, "Unsupported request: "
@@ -205,16 +209,18 @@ public class DubboProtocol extends AbstractProtocol {
         if (isStubServiceInvoke) {
             port = channel.getRemoteAddress().getPort();
         }
+        // 如果是参数回调，获得真正的服务名 `path` 。
         //callback
         isCallBackServiceInvoke = isClientSide(channel) && !isStubServiceInvoke;
         if (isCallBackServiceInvoke) {
             path = inv.getAttachments().get(Constants.PATH_KEY) + "." + inv.getAttachments().get(Constants.CALLBACK_SERVICE_KEY);
             inv.getAttachments().put(IS_CALLBACK_SERVICE_INVOKE, Boolean.TRUE.toString());
         }
+        // 获得服务建
         String serviceKey = serviceKey(port, path, inv.getAttachments().get(Constants.VERSION_KEY), inv.getAttachments().get(Constants.GROUP_KEY));
-
+        // 获得 Exporter 对象
         DubboExporter<?> exporter = (DubboExporter<?>) exporterMap.get(serviceKey);
-
+        // 获得 Invoker 对象
         if (exporter == null)
             throw new RemotingException(channel, "Not found exported service: " + serviceKey + " in " + exporterMap.keySet() + ", may be version or group mismatch " + ", channel: consumer: " + channel.getRemoteAddress() + " --> provider: " + channel.getLocalAddress() + ", message:" + inv);
 
