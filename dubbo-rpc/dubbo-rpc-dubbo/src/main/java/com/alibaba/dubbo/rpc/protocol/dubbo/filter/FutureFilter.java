@@ -63,10 +63,16 @@ public class FutureFilter implements Filter {
         return result;
     }
 
+    /**
+     * 同步回调
+     * @param invoker Invoker 对象
+     * @param invocation Invocation 对象
+     * @param result RPC结果
+     */
     private void syncCallback(final Invoker<?> invoker, final Invocation invocation, final Result result) {
-        if (result.hasException()) {
+        if (result.hasException()) {// 异常，触发异常回调
             fireThrowCallback(invoker, invocation, result.getException());
-        } else {
+        } else {// 正常，触发正常回调
             fireReturnCallback(invoker, invocation, result.getValue());
         }
     }
@@ -136,6 +142,7 @@ public class FutureFilter implements Filter {
     }
 
     private void fireReturnCallback(final Invoker<?> invoker, final Invocation invocation, final Object result) {
+        // 获得 `onreturn` 方法和对象
         final Method onReturnMethod = (Method) StaticContext.getSystemContext().get(StaticContext.getKey(invoker.getUrl(), invocation.getMethodName(), Constants.ON_RETURN_METHOD_KEY));
         final Object onReturnInst = StaticContext.getSystemContext().get(StaticContext.getKey(invoker.getUrl(), invocation.getMethodName(), Constants.ON_RETURN_INSTANCE_KEY));
 
@@ -150,7 +157,7 @@ public class FutureFilter implements Filter {
         if (!onReturnMethod.isAccessible()) {
             onReturnMethod.setAccessible(true);
         }
-
+        // 参数数组
         Object[] args = invocation.getArguments();
         Object[] params;
         Class<?>[] rParaTypes = onReturnMethod.getParameterTypes();
@@ -167,6 +174,7 @@ public class FutureFilter implements Filter {
         } else {
             params = new Object[]{result};
         }
+        // 调用方法
         try {
             onReturnMethod.invoke(onReturnInst, params);
         } catch (InvocationTargetException e) {
@@ -177,6 +185,7 @@ public class FutureFilter implements Filter {
     }
 
     private void fireThrowCallback(final Invoker<?> invoker, final Invocation invocation, final Throwable exception) {
+        // 获得 `onthrow` 方法和对象
         final Method onthrowMethod = (Method) StaticContext.getSystemContext().get(StaticContext.getKey(invoker.getUrl(), invocation.getMethodName(), Constants.ON_THROW_METHOD_KEY));
         final Object onthrowInst = StaticContext.getSystemContext().get(StaticContext.getKey(invoker.getUrl(), invocation.getMethodName(), Constants.ON_THROW_INSTANCE_KEY));
 
@@ -191,8 +200,9 @@ public class FutureFilter implements Filter {
             onthrowMethod.setAccessible(true);
         }
         Class<?>[] rParaTypes = onthrowMethod.getParameterTypes();
-        if (rParaTypes[0].isAssignableFrom(exception.getClass())) {
+        if (rParaTypes[0].isAssignableFrom(exception.getClass())) { // 符合异常
             try {
+                // 参数数组
                 Object[] args = invocation.getArguments();
                 Object[] params;
 
@@ -209,11 +219,12 @@ public class FutureFilter implements Filter {
                 } else {
                     params = new Object[]{exception};
                 }
+                // 调用方法
                 onthrowMethod.invoke(onthrowInst, params);
             } catch (Throwable e) {
                 logger.error(invocation.getMethodName() + ".call back method invoke error . callback method :" + onthrowMethod + ", url:" + invoker.getUrl(), e);
             }
-        } else {
+        } else {// 不符合异常，打印错误日志
             logger.error(invocation.getMethodName() + ".call back method invoke error . callback method :" + onthrowMethod + ", url:" + invoker.getUrl(), exception);
         }
     }
