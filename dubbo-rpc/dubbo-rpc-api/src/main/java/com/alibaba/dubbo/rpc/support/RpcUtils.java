@@ -118,12 +118,14 @@ public class RpcUtils {
     }
 
     public static Object[] getArguments(Invocation invocation) {
+        // 泛化调用，第一个参数为方法名
         if (Constants.$INVOKE.equals(invocation.getMethodName())
                 && invocation.getArguments() != null
                 && invocation.getArguments().length > 2
                 && invocation.getArguments()[2] instanceof Object[]) {
             return (Object[]) invocation.getArguments()[2];
         }
+        // 普通调用，直接获得
         return invocation.getArguments();
     }
 
@@ -150,6 +152,7 @@ public class RpcUtils {
         if (Boolean.TRUE.toString().equals(inv.getAttachment(Constants.ASYNC_KEY))) {
             isAsync = true;
         } else {
+            //RpcContext#asyncCall(Callable) 方法，可以设置
             isAsync = url.getMethodParameter(getMethodName(inv), Constants.ASYNC_KEY, false);
         }
         return isAsync;
@@ -160,6 +163,7 @@ public class RpcUtils {
         if (Boolean.FALSE.toString().equals(inv.getAttachment(Constants.RETURN_KEY))) {
             isOneway = true;
         } else {
+            // RpcContext#asyncCall(Runnable) 方法，可以设置
             isOneway = !url.getMethodParameter(getMethodName(inv), Constants.RETURN_KEY, true);
         }
         return isOneway;
