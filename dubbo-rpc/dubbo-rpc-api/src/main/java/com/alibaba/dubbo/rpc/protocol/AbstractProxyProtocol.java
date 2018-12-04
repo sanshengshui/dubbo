@@ -35,8 +35,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public abstract class AbstractProxyProtocol extends AbstractProtocol {
 
+    /**
+     * 需要抛出的异常类集合，详见{@link #refer(Class, URL)}
+     */
     private final List<Class<?>> rpcExceptions = new CopyOnWriteArrayList<Class<?>>();
-
+    /**
+     * ProxyFactory 对象
+     */
     private ProxyFactory proxyFactory;
 
     public AbstractProxyProtocol() {
@@ -137,8 +142,26 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
         return RpcException.UNKNOWN_EXCEPTION;
     }
 
+    /**
+     * 执行暴露，并返回取消暴露的回调Runnable
+     *
+     * @param impl 服务 Proxy对象
+     * @param type 服务接口
+     * @param url URL
+     * @param <T> 服务接口
+     * @return 暴露的回调 Runnable
+     * @throws RpcException 当发生异常
+     */
     protected abstract <T> Runnable doExport(T impl, Class<T> type, URL url) throws RpcException;
 
+    /**
+     * 执行引用，并返回调用远程服务的Service 对象
+     * @param type 服务接口
+     * @param url URL
+     * @param <T> 服务接口
+     * @return 调用远程服务的Service对象
+     * @throws RpcException 当发生异常
+     */
     protected abstract <T> T doRefer(Class<T> type, URL url) throws RpcException;
 
 }
