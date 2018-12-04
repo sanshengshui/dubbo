@@ -45,12 +45,25 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class HttpProtocol extends AbstractProxyProtocol {
 
+    /**
+     * 默认服务器端口
+     */
     public static final int DEFAULT_PORT = 80;
 
+    /**
+     * Http 服务器集合
+     * key: ip:port
+     */
     private final Map<String, HttpServer> serverMap = new ConcurrentHashMap<String, HttpServer>();
 
+    /**
+     * Spring  HttpInvokerServiceExporter 集合
+     * key：path 服务名
+     */
     private final Map<String, HttpInvokerServiceExporter> skeletonMap = new ConcurrentHashMap<String, HttpInvokerServiceExporter>();
-
+    /**
+     * HttpBinder$Adaptive对象
+     */
     private HttpBinder httpBinder;
 
     public HttpProtocol() {
