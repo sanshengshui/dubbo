@@ -113,9 +113,11 @@ public class HttpProtocol extends AbstractProxyProtocol {
     @Override
     @SuppressWarnings("unchecked")
     protected <T> T doRefer(final Class<T> serviceType, final URL url) throws RpcException {
+        // 创建 HttpInvokerProxyFactoryBean 对象
         final HttpInvokerProxyFactoryBean httpProxyFactoryBean = new HttpInvokerProxyFactoryBean();
         httpProxyFactoryBean.setServiceUrl(url.toIdentityString());
         httpProxyFactoryBean.setServiceInterface(serviceType);
+        // 创建执行器 SimpleHttpInvokerRequestExecutor 对象
         String client = url.getParameter(Constants.CLIENT_KEY);
         if (client == null || client.length() == 0 || "simple".equals(client)) {
             SimpleHttpInvokerRequestExecutor httpInvokerRequestExecutor = new SimpleHttpInvokerRequestExecutor() {
@@ -128,6 +130,7 @@ public class HttpProtocol extends AbstractProxyProtocol {
                 }
             };
             httpProxyFactoryBean.setHttpInvokerRequestExecutor(httpInvokerRequestExecutor);
+            // 创建执行器 HttpComponentsHttpInvokerRequestExecutor 对象
         } else if ("commons".equals(client)) {
             HttpComponentsHttpInvokerRequestExecutor httpInvokerRequestExecutor = new HttpComponentsHttpInvokerRequestExecutor();
             httpInvokerRequestExecutor.setReadTimeout(url.getParameter(Constants.CONNECT_TIMEOUT_KEY, Constants.DEFAULT_CONNECT_TIMEOUT));
@@ -135,6 +138,7 @@ public class HttpProtocol extends AbstractProxyProtocol {
         } else {
             throw new IllegalStateException("Unsupported http protocol client " + client + ", only supported: simple, commons");
         }
+        // 返回 HttpInvokerProxyFactoryBean 对象
         httpProxyFactoryBean.afterPropertiesSet();
         return (T) httpProxyFactoryBean.getObject();
     }
