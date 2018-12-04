@@ -31,6 +31,9 @@ import java.net.URL;
  */
 public class HttpClientConnectionFactory implements HessianConnectionFactory {
 
+    /**
+     * Apache HttpClient
+     */
     private final HttpClient httpClient = new DefaultHttpClient();
 
     @Override
