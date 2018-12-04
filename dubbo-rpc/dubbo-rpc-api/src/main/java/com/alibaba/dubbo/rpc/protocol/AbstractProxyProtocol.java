@@ -68,17 +68,23 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
     @Override
     @SuppressWarnings("unchecked")
     public <T> Exporter<T> export(final Invoker<T> invoker) throws RpcException {
+        //获得服务键
         final String uri = serviceKey(invoker.getUrl());
+        //获得Exporter 对象。若已经暴露，直接返回。
         Exporter<T> exporter = (Exporter<T>) exporterMap.get(uri);
         if (exporter != null) {
             return exporter;
         }
+        //执行暴露服务
         final Runnable runnable = doExport(proxyFactory.getProxy(invoker), invoker.getInterface(), invoker.getUrl());
+        //创建Exporter对象
         exporter = new AbstractExporter<T>(invoker) {
             @Override
             public void unexport() {
+                //取消暴露
                 super.unexport();
                 exporterMap.remove(uri);
+                //执行取消暴露的回调
                 if (runnable != null) {
                     try {
                         runnable.run();
@@ -88,6 +94,7 @@ public abstract class AbstractProxyProtocol extends AbstractProtocol {
                 }
             }
         };
+        // 添加到Exporter集合
         exporterMap.put(uri, exporter);
         return exporter;
     }
