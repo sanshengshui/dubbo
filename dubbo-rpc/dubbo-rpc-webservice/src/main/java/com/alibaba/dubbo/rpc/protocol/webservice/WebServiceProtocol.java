@@ -52,15 +52,23 @@ import java.util.concurrent.ConcurrentHashMap;
  * WebServiceProtocol.
  */
 public class WebServiceProtocol extends AbstractProxyProtocol {
-
+    /**
+     * 默认服务器端口
+     */
     public static final int DEFAULT_PORT = 80;
-
+    /**
+     * Http 服务器集合
+     *
+     * key：ip:port
+     */
     private final Map<String, HttpServer> serverMap = new ConcurrentHashMap<String, HttpServer>();
 
     private final ExtensionManagerBus bus = new ExtensionManagerBus();
 
     private final HTTPTransportFactory transportFactory = new HTTPTransportFactory();
-
+    /**
+     * HttpBinder$Adaptive 对象
+     */
     private HttpBinder httpBinder;
 
     public WebServiceProtocol() {
