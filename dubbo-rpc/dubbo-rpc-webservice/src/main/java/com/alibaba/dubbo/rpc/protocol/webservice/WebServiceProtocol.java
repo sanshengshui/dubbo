@@ -115,11 +115,14 @@ public class WebServiceProtocol extends AbstractProxyProtocol {
     @Override
     @SuppressWarnings("unchecked")
     protected <T> T doRefer(final Class<T> serviceType, final URL url) throws RpcException {
+        // 创建 ClientProxyFactoryBean 对象
         ClientProxyFactoryBean proxyFactoryBean = new ClientProxyFactoryBean();
         proxyFactoryBean.setAddress(url.setProtocol("http").toIdentityString());
         proxyFactoryBean.setServiceClass(serviceType);
         proxyFactoryBean.setBus(bus);
+        // 创建 Service Proxy 对象
         T ref = (T) proxyFactoryBean.create();
+        // 设置超时相关属性
         Client proxy = ClientProxy.getClient(ref);
         HTTPConduit conduit = (HTTPConduit) proxy.getConduit();
         HTTPClientPolicy policy = new HTTPClientPolicy();
@@ -148,6 +151,7 @@ public class WebServiceProtocol extends AbstractProxyProtocol {
 
         @Override
         public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+            // 创建 ServletController 对象，设置使用 DispatcherServlet 。
             if (servletController == null) {
                 HttpServlet httpServlet = DispatcherServlet.getInstance();
                 if (httpServlet == null) {
@@ -160,7 +164,9 @@ public class WebServiceProtocol extends AbstractProxyProtocol {
                     }
                 }
             }
+            // 设置调用方地址
             RpcContext.getContext().setRemoteAddress(request.getRemoteAddr(), request.getRemotePort());
+            // 执行调用
             servletController.invoke(request, response);
         }
 
