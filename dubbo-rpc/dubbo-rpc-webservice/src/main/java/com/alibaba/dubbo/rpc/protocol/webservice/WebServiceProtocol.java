@@ -87,12 +87,15 @@ public class WebServiceProtocol extends AbstractProxyProtocol {
 
     @Override
     protected <T> Runnable doExport(T impl, Class<T> type, URL url) throws RpcException {
+        // 获得服务器地址
         String addr = getAddr(url);
+        // 获得 HttpServer 对象。若不存在，进行创建。
         HttpServer httpServer = serverMap.get(addr);
         if (httpServer == null) {
             httpServer = httpBinder.bind(url, new WebServiceHandler());
             serverMap.put(addr, httpServer);
         }
+        // 创建 ServerFactoryBean 对象
         final ServerFactoryBean serverFactoryBean = new ServerFactoryBean();
         serverFactoryBean.setAddress(url.getAbsolutePath());
         serverFactoryBean.setServiceClass(type);
@@ -100,6 +103,7 @@ public class WebServiceProtocol extends AbstractProxyProtocol {
         serverFactoryBean.setBus(bus);
         serverFactoryBean.setDestinationFactory(transportFactory);
         serverFactoryBean.create();
+        // 返回取消暴露的回调 Runnable
         return new Runnable() {
             @Override
             public void run() {
