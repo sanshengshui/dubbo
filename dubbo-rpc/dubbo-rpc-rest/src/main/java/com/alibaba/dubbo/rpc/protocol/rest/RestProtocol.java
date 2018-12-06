@@ -56,15 +56,29 @@ import java.util.concurrent.TimeUnit;
 
 public class RestProtocol extends AbstractProxyProtocol {
 
+    /**
+     * 服务器默认端口
+     */
     private static final int DEFAULT_PORT = 80;
-
+    /**
+     * 服务器集合
+     * key: ip:port
+     */
     private final Map<String, RestServer> servers = new ConcurrentHashMap<String, RestServer>();
-
+    /**
+     * 服务器工厂，负责创建服务器
+     */
     private final RestServerFactory serverFactory = new RestServerFactory();
 
+    /**
+     * 客户端数组
+     */
     // TODO in the future maybe we can just use a single rest client and connection manager
     private final List<ResteasyClient> clients = Collections.synchronizedList(new LinkedList<ResteasyClient>());
 
+    /**
+     * 连接监控器
+     */
     private volatile ConnectionMonitor connectionMonitor;
 
     public RestProtocol() {
