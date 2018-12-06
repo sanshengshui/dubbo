@@ -152,27 +152,31 @@ public class RestProtocol extends AbstractProxyProtocol {
 
     @Override
     protected <T> T doRefer(Class<T> serviceType, URL url) throws RpcException {
+        // 创建 ConnectionMonitor 对象。
         if (connectionMonitor == null) {
             connectionMonitor = new ConnectionMonitor();
         }
-
+        // 创建 HttpClient 连接池管理器
         // TODO more configs to add
         PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+        // 最大请求数
         // 20 is the default maxTotal of current PoolingClientConnectionManager
         connectionManager.setMaxTotal(url.getParameter(Constants.CONNECTIONS_KEY, 20));
+        // 每个路由，最大请求数
         connectionManager.setDefaultMaxPerRoute(url.getParameter(Constants.CONNECTIONS_KEY, 20));
-
+        // 添加到 ConnectionMonitor 中。
         connectionMonitor.addConnectionManager(connectionManager);
+        // 创建 RequestConfig 对象
         RequestConfig requestConfig = RequestConfig.custom()
                 .setConnectTimeout(url.getParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT))
                 .setSocketTimeout(url.getParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT))
                 .build();
-
+        // 创建 SocketConfig 对象
         SocketConfig socketConfig = SocketConfig.custom()
                 .setSoKeepAlive(true)
                 .setTcpNoDelay(true)
                 .build();
-
+        // 创建 HttpClient 对象 【Apache】
         CloseableHttpClient httpClient = HttpClientBuilder.create()
                 .setKeepAliveStrategy(new ConnectionKeepAliveStrategy() {
                     @Override
@@ -193,13 +197,15 @@ public class RestProtocol extends AbstractProxyProtocol {
                 .setDefaultRequestConfig(requestConfig)
                 .setDefaultSocketConfig(socketConfig)
                 .build();
-
+        // 创建 ApacheHttpClient4Engine 对象 【Resteasy】
         ApacheHttpClient4Engine engine = new ApacheHttpClient4Engine(httpClient/*, localContext*/);
-
+        // 创建 ResteasyClient 对象 【Resteasy】
         ResteasyClient client = new ResteasyClientBuilder().httpEngine(engine).build();
+        // 添加到客户端集合
         clients.add(client);
-
+        // 设置 RpcContextFilter 过滤器
         client.register(RpcContextFilter.class);
+        // 从 `extension` 配置项，设置对应的组件（过滤器 Filter 、拦截器 Interceptor 、异常匹配器 ExceptionMapper 等等）。
         for (String clazz : Constants.COMMA_SPLIT_PATTERN.split(url.getParameter(Constants.EXTENSION_KEY, ""))) {
             if (!StringUtils.isEmpty(clazz)) {
                 try {
@@ -209,7 +215,7 @@ public class RestProtocol extends AbstractProxyProtocol {
                 }
             }
         }
-
+        // 创建 Service Proxy 对象。
         // TODO protocol
         ResteasyWebTarget target = client.target("http://" + url.getHost() + ":" + url.getPort() + "/" + getContextPath(url));
         return target.proxy(serviceType);
