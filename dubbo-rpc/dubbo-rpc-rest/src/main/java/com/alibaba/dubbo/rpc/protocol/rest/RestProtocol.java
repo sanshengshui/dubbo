@@ -96,16 +96,20 @@ public class RestProtocol extends AbstractProxyProtocol {
 
     @Override
     protected <T> Runnable doExport(T impl, Class<T> type, URL url) throws RpcException {
+        // 获得服务器地址
         String addr = getAddr(url);
+        // 获得服务的真实类名，例如 DemoServiceImpl
         Class implClass = ServiceClassHolder.getInstance().popServiceClass();
+        // 获得 RestServer 对象。若不存在，进行创建。
         RestServer server = servers.get(addr);
         if (server == null) {
             server = serverFactory.createServer(url.getParameter(Constants.SERVER_KEY, "jetty"));
-            server.start(url);
+            server.start(url); // 启动
             servers.put(addr, server);
         }
-
+        // 获得 ContextPath 路径。
         String contextPath = getContextPath(url);
+        // 外部的容器，需要从 ServletContext 中获得。
         if ("servlet".equalsIgnoreCase(url.getParameter(Constants.SERVER_KEY, "jetty"))) {
             ServletContext servletContext = ServletManager.getInstance().getServletContext(ServletManager.EXTERNAL_SERVER_PORT);
             if (servletContext == null) {
@@ -114,22 +118,27 @@ public class RestProtocol extends AbstractProxyProtocol {
             }
             String webappPath = servletContext.getContextPath();
             if (StringUtils.isNotEmpty(webappPath)) {
+                // 去掉 `/` 起始
                 webappPath = webappPath.substring(1);
+                // 校验 URL 中配置的 `contextPath` 是外部容器的 `contextPath` 起始。
                 if (!contextPath.startsWith(webappPath)) {
                     throw new RpcException("Since you are using server='servlet', " +
                             "make sure that the 'contextpath' property starts with the path of external webapp");
                 }
+                // 截取掉起始部分
                 contextPath = contextPath.substring(webappPath.length());
+                // 去掉 `/` 起始
                 if (contextPath.startsWith("/")) {
                     contextPath = contextPath.substring(1);
                 }
             }
         }
 
+        // 获得以 `@Path` 为注解的基础类，一般情况下，我们直接在 `implClass` 上添加了该注解，即就是 `implClass` 类。
         final Class resourceDef = GetRestful.getRootResourceClass(implClass) != null ? implClass : type;
-
+        // 部署到服务器上
         server.deploy(resourceDef, impl, contextPath);
-
+        // 返回取消暴露的回调 Runnable
         final RestServer s = server;
         return new Runnable() {
             @Override
