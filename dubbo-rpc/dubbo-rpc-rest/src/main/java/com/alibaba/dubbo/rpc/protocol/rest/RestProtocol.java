@@ -266,7 +266,13 @@ public class RestProtocol extends AbstractProxyProtocol {
     }
 
     protected class ConnectionMonitor extends Thread {
+        /**
+         * 是否关闭
+         */
         private volatile boolean shutdown;
+        /**
+         * HttpClient 连接池管理器集合
+         */
         private final List<PoolingHttpClientConnectionManager> connectionManagers = Collections.synchronizedList(new LinkedList<PoolingHttpClientConnectionManager>());
 
         public void addConnectionManager(PoolingHttpClientConnectionManager connectionManager) {
@@ -278,7 +284,8 @@ public class RestProtocol extends AbstractProxyProtocol {
             try {
                 while (!shutdown) {
                     synchronized (this) {
-                        wait(1000);
+                        // 等待 1000 ms
+                        wait(1000); //可被下面shutdown()方法，强行关闭
                         for (PoolingHttpClientConnectionManager connectionManager : connectionManagers) {
                             connectionManager.closeExpiredConnections();
                             // TODO constant
@@ -292,8 +299,11 @@ public class RestProtocol extends AbstractProxyProtocol {
         }
 
         public void shutdown() {
+            // 标记关闭
             shutdown = true;
+            // 清除管理器集合
             connectionManagers.clear();
+            // 唤醒等待线程
             synchronized (this) {
                 notifyAll();
             }
