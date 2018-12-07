@@ -229,12 +229,14 @@ public class RestProtocol extends AbstractProxyProtocol {
 
     @Override
     public void destroy() {
+        // 父类销毁
         super.destroy();
 
         if (connectionMonitor != null) {
+            // 关闭ConnectionMonitor
             connectionMonitor.shutdown();
         }
-
+        // 关闭服务器
         for (Map.Entry<String, RestServer> entry : servers.entrySet()) {
             try {
                 if (logger.isInfoEnabled()) {
@@ -246,7 +248,7 @@ public class RestProtocol extends AbstractProxyProtocol {
             }
         }
         servers.clear();
-
+        // 关闭客户端
         if (logger.isInfoEnabled()) {
             logger.info("Closing rest clients");
         }
