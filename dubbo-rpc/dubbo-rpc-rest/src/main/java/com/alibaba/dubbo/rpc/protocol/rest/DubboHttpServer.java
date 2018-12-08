@@ -50,9 +50,10 @@ public class DubboHttpServer extends BaseRestServer {
 
     @Override
     protected void doStart(URL url) {
+        // 创建 HttpServer 对象，使用 RestHandler 作为处理器。
         // TODO jetty will by default enable keepAlive so the xml config has no effect now
         httpServer = httpBinder.bind(url, new RestHandler());
-
+        // 获得 ServletContext 对象
         ServletContext servletContext = ServletManager.getInstance().getServletContext(url.getPort());
         if (servletContext == null) {
             servletContext = ServletManager.getInstance().getServletContext(ServletManager.EXTERNAL_SERVER_PORT);
@@ -85,7 +86,9 @@ public class DubboHttpServer extends BaseRestServer {
 
         @Override
         public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+            // 设置
             RpcContext.getContext().setRemoteAddress(request.getRemoteAddr(), request.getRemotePort());
+            // 调度请求
             dispatcher.service(request, response);
         }
     }
