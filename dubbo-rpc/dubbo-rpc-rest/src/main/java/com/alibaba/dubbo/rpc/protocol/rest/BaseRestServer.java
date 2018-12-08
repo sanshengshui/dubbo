@@ -26,15 +26,18 @@ public abstract class BaseRestServer implements RestServer {
 
     @Override
     public void start(URL url) {
+        //添加 MediaType
         getDeployment().getMediaTypeMappings().put("json", "application/json");
         getDeployment().getMediaTypeMappings().put("xml", "text/xml");
 //        server.getDeployment().getMediaTypeMappings().put("xml", "application/xml");
         getDeployment().getProviderClasses().add(RpcContextFilter.class.getName());
+        //添加过滤器 RpcContextFilter
         // TODO users can override this mapper, but we just rely on the current priority strategy of resteasy
+        // 添加异常匹配 RpcExceptionMapper
         getDeployment().getProviderClasses().add(RpcExceptionMapper.class.getName());
-
+        // 从 `extension` 配置项，添加对应的组件（过滤器 Filter 、拦截器 Interceptor 、异常匹配器 ExceptionMapper 等等）
         loadProviders(url.getParameter(Constants.EXTENSION_KEY, ""));
-
+        // 启动服务器
         doStart(url);
     }
 
